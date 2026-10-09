@@ -188,7 +188,7 @@ echo "$podcast_rn" | grep -q 'deep_filter' && fail "podcast RNNoise must not sta
 
 meeting_auto="$(dump meeting)"
 podcast_auto="$(dump podcast)"
-if [[ -f /usr/lib/ladspa/libdpdfnet_ladspa.so && -f /usr/share/hushmic/models/dpdfnet8_48khz_hr.onnx ]]; then
+if [[ $("$root/scripts/omavoice-probe") == *'"dpdfnet":true'* ]]; then
   echo "$meeting_auto" | grep -q 'dpdfnet_mono' || fail "auto meeting must use DPDFNet when HushMic is installed"
   echo "$podcast_auto" | grep -q 'dpdfnet_mono' || fail "auto podcast must use DPDFNet when HushMic is installed"
 else

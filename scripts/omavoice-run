@@ -63,13 +63,22 @@ for candidate in /usr/lib/ladspa/libdeep_filter_ladspa.so /usr/lib64/ladspa/libd
   fi
 done
 
+# DPDFNet: the local copy first, else HushMic's system install. The plugin
+# reads its model and ONNX Runtime paths from the env of the pipewire host.
 dpdfnet=""
-for candidate in /usr/lib/ladspa/libdpdfnet_ladspa.so /usr/lib64/ladspa/libdpdfnet_ladspa.so; do
-  if [[ -f $candidate && -f /usr/share/hushmic/models/dpdfnet8_48khz_hr.onnx ]]; then
-    dpdfnet=$candidate
-    break
-  fi
-done
+dp_local="${XDG_DATA_HOME:-$HOME/.local/share}/omavoice/dpdfnet"
+if [[ -f $dp_local/libdpdfnet_ladspa.so && -f $dp_local/dpdfnet8_48khz_hr.onnx && -f $dp_local/libonnxruntime.so ]]; then
+  dpdfnet=$dp_local/libdpdfnet_ladspa.so
+  export HUSHMIC_MODEL_PATH=$dp_local/dpdfnet8_48khz_hr.onnx
+  export ORT_DYLIB_PATH=$dp_local/libonnxruntime.so
+else
+  for candidate in /usr/lib/ladspa/libdpdfnet_ladspa.so /usr/lib64/ladspa/libdpdfnet_ladspa.so; do
+    if [[ -f $candidate && -f /usr/share/hushmic/models/dpdfnet8_48khz_hr.onnx ]]; then
+      dpdfnet=$candidate
+      break
+    fi
+  done
+fi
 
 webrtc=""
 for candidate in /usr/lib/spa-0.2/aec/libspa-aec-webrtc.so /usr/lib64/spa-0.2/aec/libspa-aec-webrtc.so; do

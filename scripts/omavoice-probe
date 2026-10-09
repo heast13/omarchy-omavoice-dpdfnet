@@ -13,7 +13,11 @@ done
 for candidate in /usr/lib/ladspa/libdeep_filter_ladspa.so /usr/lib64/ladspa/libdeep_filter_ladspa.so; do
   [[ -f $candidate ]] && have_deepfilter=true && break
 done
-# HushMic's plugin loads its model from /usr/share/hushmic on its own.
+# Must match omavoice-run: the local copy, else HushMic's system install.
+dp_local="${XDG_DATA_HOME:-$HOME/.local/share}/omavoice/dpdfnet"
+if [[ -f $dp_local/libdpdfnet_ladspa.so && -f $dp_local/dpdfnet8_48khz_hr.onnx && -f $dp_local/libonnxruntime.so ]]; then
+  have_dpdfnet=true
+fi
 for candidate in /usr/lib/ladspa/libdpdfnet_ladspa.so /usr/lib64/ladspa/libdpdfnet_ladspa.so; do
   [[ -f $candidate && -f /usr/share/hushmic/models/dpdfnet8_48khz_hr.onnx ]] && have_dpdfnet=true && break
 done
