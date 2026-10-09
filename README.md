@@ -39,16 +39,16 @@ In the app itself, choose **Omavoice** as the microphone and turn *its* noise ca
 
 ## DPDFNet
 
-DPDFNet (Ceva, a DeepFilterNet2 descendant) runs as a LADSPA plugin. Omavoice loads these four files from `~/.local/share/omavoice/dpdfnet/`:
+DPDFNet (Ceva, a DeepFilterNet2 descendant) runs as a LADSPA plugin. Omavoice loads these files from `~/.local/share/omavoice/dpdfnet/`:
 
 ```
 libdpdfnet_ladspa.so            # plugin, from HushMic
 dpdfnet8_48khz_hr.onnx          # model
-dpdfnet8_48khz_hr.weights.f32   # native int8 / fp32 weights
+dpdfnet8_48khz_hr.weights.f32   # optional: faster native engine
 libonnxruntime.so               # ONNX Runtime the plugin was built against
 ```
 
-If that folder is incomplete, Omavoice falls back to a system install of `hushmic-bin`. Without either, Podcast is high-pass only and the panel says **DPDFNet missing**. Copy the files, then click **reload**.
+If that folder is incomplete, Omavoice falls back to a system install of `hushmic-bin`. Without either, Podcast skips denoise and the compressor (high-pass and voice EQ stay) and the panel says **DPDFNet missing**. Copy the files, then click **reload**.
 
 Softer / Balanced / Stronger cap the suppression at 24 / 48 / 100 dB. DPDFNet adds about 40 ms of latency.
 
@@ -116,7 +116,7 @@ omarchy plugin enable gigasolo.omavoice --section right
 
 **The panel says DPDFNet missing.** Check the four files in `~/.local/share/omavoice/dpdfnet/`, then **reload**.
 
-**Omavoice is silent.** WirePlumber remembers a mute on the source. Check `pactl get-source-mute omavoice`.
+**Omavoice is silent.** WirePlumber remembers a mute on the source. Check `pactl get-source-mute omavoice`. If it is not muted, the DPDFNet files may not match: the plugin emits silence when ONNX Runtime or the model fails to load. Copy all files from the same HushMic release.
 
 **The app still hears the raw USB mic.** Select **Omavoice** inside the app, not the hardware device.
 

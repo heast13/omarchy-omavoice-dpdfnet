@@ -219,4 +219,9 @@ grep -q 'Listen (use headphones)' "$root/Panel.qml" && fail "Listen row must be 
 grep -q 'id: beforePeakMonitor' "$root/Panel.qml" && fail "hero Before/After meters must be gone"
 grep -q 'label: "Before"' "$root/Panel.qml" && fail "hero Before bar must be gone"
 
+grep -q 'Model.dpAttenuation(quality)' "$root/Service.qml" || fail "live controls must push the DPDFNet cap"
+grep -q 'haveDpdfnet || !probed' "$root/Service.qml" || fail "do not flash DPDFNet missing before the first probe"
+grep -B1 'if (dy === 0) return' "$root/Panel.qml" | grep -q '^    }' || fail "Left/Right must move between mode chips before the dy guard"
+grep -q 'launchSetup' "$root/Panel.qml" && fail "the setup command row is gone"
+
 echo "qml.test: ok"

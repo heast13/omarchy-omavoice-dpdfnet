@@ -84,7 +84,8 @@ Item {
   readonly property string pinnedSource: String(setting("pinnedSource", "") || "")
   readonly property string previousAudioSource: String(setting("previousAudioSource", "") || "")
   readonly property bool setDefaultSource: setting("setDefaultSource", true) !== false
-  readonly property var setup: Model.setupGuide(preset, haveDpdfnet)
+  // Not "missing" before the first probe answers.
+  readonly property var setup: Model.setupGuide(preset, haveDpdfnet || !probed)
   readonly property bool setupNeeded: setup.needed
   readonly property real outputGainDb: Model.outputGainDbForPreset(preset, settings)
   readonly property real captureGainDb: Model.captureGainDbForPreset(preset, settings)

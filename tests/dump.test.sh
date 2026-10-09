@@ -30,6 +30,25 @@ fi
 have_dp=0
 [[ $("$root/scripts/omavoice-probe") == *'"dpdfnet":true'* ]] && have_dp=1
 
+# Probe and run must agree on the local copy, with and without the files.
+fake=$(mktemp -d)
+trap 'rm -rf -- "$fake"' EXIT
+mkdir -p "$fake/full/omavoice/dpdfnet" "$fake/empty"
+touch "$fake/full/omavoice/dpdfnet/"{libdpdfnet_ladspa.so,dpdfnet8_48khz_hr.onnx,libonnxruntime.so}
+full_conf="$(XDG_DATA_HOME=$fake/full dump podcast)"
+echo "$full_conf" | grep -q "plugin = \"$fake/full/omavoice/dpdfnet/libdpdfnet_ladspa.so\"" \
+  || fail "a complete local copy must load DPDFNet from XDG_DATA_HOME"
+[[ $(XDG_DATA_HOME=$fake/full "$root/scripts/omavoice-probe") == '{"dpdfnet":true}' ]] \
+  || fail "probe must see a complete local copy"
+if [[ ! -f /usr/lib/ladspa/libdpdfnet_ladspa.so && ! -f /usr/lib64/ladspa/libdpdfnet_ladspa.so ]]; then
+  empty_conf="$(XDG_DATA_HOME=$fake/empty dump podcast)"
+  echo "$empty_conf" | grep -q 'dpdfnet' && fail "podcast without DPDFNet must not load it"
+  echo "$empty_conf" | grep -q 'compressor_mono' && fail "podcast without DPDFNet must skip the compressor"
+  echo "$empty_conf" | grep -q 'name = eq_body' || fail "podcast without DPDFNet keeps voice EQ"
+  [[ $(XDG_DATA_HOME=$fake/empty "$root/scripts/omavoice-probe") == '{"dpdfnet":false}' ]] \
+    || fail "probe must report missing DPDFNet like omavoice-run"
+fi
+
 podcast="$(dump podcast)"
 podcast_good="$(dump podcast --quality good)"
 podcast_best="$(dump podcast --quality best)"
@@ -43,6 +62,11 @@ gone_engine=$?
 set -e
 [[ $gone_preset -eq 2 ]] || fail "--preset meeting is gone and must be rejected, got $gone_preset"
 [[ $gone_engine -eq 2 ]] || fail "--engine is gone and must be rejected, got $gone_engine"
+set +e
+"$run" --dump --target "$target" --dir "$root" --preset >/dev/null 2>&1
+dangling=$?
+set -e
+[[ $dangling -eq 2 ]] || fail "a flag without a value must print usage, got $dangling"
 
 for conf in "$podcast" "$clean"; do
   echo "$conf" | grep -qE 'noise_suppressor|deep_filter|monitor.mode|echo-cancel|audio.aec|omavoice.aec' \

@@ -19,8 +19,8 @@ Local build: DPDFNet only.
 
 ### Changed
 
-- Podcast always runs DPDFNet. Without it, Podcast is high-pass only and
-  the panel says **DPDFNet missing**.
+- Podcast always runs DPDFNet. Without it, Podcast skips denoise and the
+  compressor, and the panel says **DPDFNet missing**.
 - DPDFNet loads from `~/.local/share/omavoice/dpdfnet`, else from a system
   `hushmic-bin`.
 - A stored `meeting` preset falls back to Podcast.

@@ -398,11 +398,10 @@ function dpAttenuation(quality) {
 }
 
 function setupGuide(preset, haveDpdfnet) {
-  if (normalizePreset(preset) === "clean" || haveDpdfnet) return { needed: false, hero: "", command: "", body: "" }
+  if (normalizePreset(preset) === "clean" || haveDpdfnet) return { needed: false, hero: "", body: "" }
   return {
     needed: true,
     hero: "DPDFNet missing",
-    command: "",
     body: "Copy the DPDFNet plugin, model and ONNX Runtime to ~/.local/share/omavoice/dpdfnet, then reload."
   }
 }

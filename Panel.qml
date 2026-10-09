@@ -330,12 +330,6 @@ Panel {
     }
   }
 
-  function launchSetup() {
-    if (!bar || !setup.command) return
-    bar.run("omarchy-launch-floating-terminal-with-presentation " + Util.shellQuote(setup.command))
-    close()
-  }
-
   function ensureCursor() {
     if (focusSection === "presets") {
       for (var i = 0; i < presets.length; i++) {
@@ -361,15 +355,14 @@ Panel {
     if (tuneOpen) return
     cursorActive = true
     ensureCursor()
-    if (dy === 0) return
-    var sections = ["header", "presets", "sources"]
-    if (setup.needed && setup.command) sections.push("setup")
-    var idx = sections.indexOf(focusSection)
-    if (idx < 0) idx = 0
     if (focusSection === "presets" && dx !== 0) {
       presetIndex = Math.max(0, Math.min(presets.length - 1, presetIndex + dx))
       return
     }
+    if (dy === 0) return
+    var sections = ["header", "presets", "sources"]
+    var idx = sections.indexOf(focusSection)
+    if (idx < 0) idx = 0
     if (focusSection === "sources" && dy !== 0 && displaySources.length > 0) {
       var next = sourceIndex + dy
       if (next >= 0 && next < displaySources.length) {
@@ -388,7 +381,6 @@ Panel {
     if (focusSection === "header") toggleEnabled()
     else if (focusSection === "presets") choosePreset(presets[presetIndex].value)
     else if (focusSection === "sources" && displaySources[sourceIndex]) chooseSource(displaySources[sourceIndex].name)
-    else if (focusSection === "setup") launchSetup()
   }
 
   implicitWidth: button.implicitWidth
@@ -639,35 +631,6 @@ Panel {
               font.family: root.fontFamily
               font.pixelSize: Style.font.bodySmall
               wrapMode: Text.WordWrap
-            }
-
-            CursorSurface {
-              visible: root.setup.command !== ""
-              width: parent.width
-              implicitHeight: setupRow.implicitHeight + Style.spacing.rowPaddingX
-              hasCursor: root.cursorActive && root.focusSection === "setup"
-              foreground: root.foreground
-              MouseArea {
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onEntered: { root.cursorActive = true; root.focusSection = "setup" }
-                onClicked: root.launchSetup()
-              }
-              RowLayout {
-                id: setupRow
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.verticalCenter: parent.verticalCenter
-                Text {
-                  text: root.setup.command
-                  color: root.foreground
-                  font.family: root.fontFamily
-                  font.pixelSize: Style.font.caption
-                  Layout.fillWidth: true
-                  wrapMode: Text.WordWrap
-                }
-              }
             }
           }
 
@@ -1156,6 +1119,8 @@ Panel {
 
           QualitySlider {
             title: "Denoise"
+            enabled: service.preset !== "clean"
+            opacity: enabled ? 1 : 0.5
             quality: service.quality
             onChosen: function(value) { root.setPodcastQuality(value) }
           }
