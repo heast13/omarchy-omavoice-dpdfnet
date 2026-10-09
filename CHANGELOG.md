@@ -8,6 +8,22 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+## [0.7.1] — 2026-10-10
+
+### Fixed
+
+- With rtkit installed, the host restarted every second while anything
+  listened (the panel's meter too), and the status flickered between Idle and
+  running. rtkit handed the host a 0 µs realtime budget, and the kernel killed
+  it on the first busy cycle.
+
+### Changed
+
+- The host runs as a transient `systemd --user` service with PipeWire's own
+  realtime settings. With rtkit, the denoiser now really runs realtime;
+  before, it inherited the shell's zero realtime limit. Without systemd it
+  runs directly and stays off rtkit.
+
 ## [0.7.0] — 2026-10-10
 
 ### Added
