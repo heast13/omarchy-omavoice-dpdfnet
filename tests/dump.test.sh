@@ -218,4 +218,7 @@ if command -v systemd-run >/dev/null && systemctl --user show -p Version >/dev/n
 fi
 [[ $(ulimit -HR) == unlimited ]] && { echo "$podcast" | grep -q 'rtkit.enabled = false' && fail "an open cap must allow rtkit"; }
 
+echo "$podcast" | grep -A1 'libpipewire-module-rt' | grep -q 'rt.prio = 88' \
+  || fail "module-rt needs PipeWire's own args, or rtkit hands out a 0 µs cap"
+
 echo "dump.test: ok"

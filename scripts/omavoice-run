@@ -174,7 +174,10 @@ if [[ -z ${OMAVOICE_NO_SYSTEMD:-} ]] && command -v systemd-run >/dev/null \
   && systemctl --user show -p Version >/dev/null 2>&1; then
   use_systemd=1
 fi
-rt_args="{ }"
+# Same realtime args as PipeWire's own pipewire.conf. Empty args get
+# priority 1 and a 0 µs RLIMIT_RTTIME from rtkit, which the kernel enforces
+# with SIGKILL.
+rt_args="{ nice.level = -11 rt.prio = 88 rtportal.enabled = false }"
 if [[ $use_systemd -eq 1 ]]; then
   rt_hard=$(systemctl --user show -p DefaultLimitRTTIME --value 2>/dev/null || echo infinity)
   [[ $rt_hard == infinity || -z $rt_hard ]] && rt_hard=unlimited
