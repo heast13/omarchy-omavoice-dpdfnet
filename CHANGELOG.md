@@ -7,6 +7,21 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+## [0.3.2-dpdfnet.1] — 2026-10-09
+
+Local build: DPDFNet as a third denoise engine.
+
+### Added
+
+- **DPDFNet** engine on the PRESET tune page, using the LADSPA plugin that
+  ships with HushMic (`hushmic-bin`). The HushMic app does not need to run.
+- Softer / Balanced / Stronger cap DPDFNet at 24 / 48 / 100 dB.
+
+### Changed
+
+- **Auto** picks DPDFNet for Meeting and Podcast when HushMic is installed.
+  Without it, Auto keeps the old RNNoise / DeepFilterNet policy.
+
 ## [0.3.2] — 2026-09-21
 
 Stereo USB remix and a stable Auto pick.

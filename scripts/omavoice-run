@@ -19,7 +19,7 @@ dump=0
 runtime_dir="${XDG_RUNTIME_DIR:-/tmp}/omavoice"
 
 usage() {
-  echo "Usage: omavoice-run [--dump] --preset meeting|podcast|clean [--quality good|better|best] [--engine auto|rnnoise|deepfilter|clean] [--eq neutral|warm|clear|bright] [--eq-body-db N] [--eq-pres-db N] [--eq-air-db N] [--capture-gain-db N] [--output-gain-db N] --target <node.name> --dir <plugin-dir>" >&2
+  echo "Usage: omavoice-run [--dump] --preset meeting|podcast|clean [--quality good|better|best] [--engine auto|rnnoise|deepfilter|dpdfnet|clean] [--eq neutral|warm|clear|bright] [--eq-body-db N] [--eq-pres-db N] [--eq-air-db N] [--capture-gain-db N] [--output-gain-db N] --target <node.name> --dir <plugin-dir>" >&2
   exit 2
 }
 
@@ -63,6 +63,14 @@ for candidate in /usr/lib/ladspa/libdeep_filter_ladspa.so /usr/lib64/ladspa/libd
   fi
 done
 
+dpdfnet=""
+for candidate in /usr/lib/ladspa/libdpdfnet_ladspa.so /usr/lib64/ladspa/libdpdfnet_ladspa.so; do
+  if [[ -f $candidate && -f /usr/share/hushmic/models/dpdfnet8_48khz_hr.onnx ]]; then
+    dpdfnet=$candidate
+    break
+  fi
+done
+
 webrtc=""
 for candidate in /usr/lib/spa-0.2/aec/libspa-aec-webrtc.so /usr/lib64/spa-0.2/aec/libspa-aec-webrtc.so; do
   if [[ -f $candidate ]]; then
@@ -91,11 +99,13 @@ if [[ $preset == clean ]]; then
   engine="clean"
 else
   case $engine_opt in
-    rnnoise|deepfilter|clean)
+    rnnoise|deepfilter|dpdfnet|clean)
       engine=$engine_opt
       ;;
     *)
-      if [[ $preset == podcast && -n $deepfilter ]]; then
+      if [[ -n $dpdfnet ]]; then
+        engine="dpdfnet"
+      elif [[ $preset == podcast && -n $deepfilter ]]; then
         engine="deepfilter"
       elif [[ -n $rnnoise ]]; then
         engine="rnnoise"
@@ -379,11 +389,29 @@ dfn_node() {
 EOF
 }
 
+# HushMic's DPDFNet plugin. Mode 0 = suppress. Same Input/Output ports as RNNoise.
+dpdfnet_node() {
+  local atten=$1
+  cat <<EOF
+                    {
+                        type = ladspa
+                        name = denoise
+                        plugin = "$dpdfnet"
+                        label = dpdfnet_mono
+                        control = {
+                            "Attenuation Limit (dB)" = $atten
+                            "Mode" = 0
+                        }
+                    }
+EOF
+}
+
 meeting_vad=80.0
 meeting_grace=400
 podcast_vad=85.0
 podcast_grace=200
 podcast_dfn=70
+dp_atten=48
 case $quality in
   good)
     meeting_vad=70.0
@@ -391,6 +419,7 @@ case $quality in
     podcast_vad=75.0
     podcast_grace=400
     podcast_dfn=50
+    dp_atten=24
     ;;
   best)
     meeting_vad=85.0
@@ -398,6 +427,7 @@ case $quality in
     podcast_vad=90.0
     podcast_grace=150
     podcast_dfn=85
+    dp_atten=100
     ;;
 esac
 
@@ -474,6 +504,10 @@ add_link() {
     dfn_node $podcast_dfn
     add_link "$prev_out" "denoise:Audio In"
     prev_out="denoise:Audio Out"
+  elif [[ $engine == dpdfnet ]]; then
+    dpdfnet_node $dp_atten
+    add_link "$prev_out" "denoise:Input"
+    prev_out="denoise:Output"
   fi
 
   if [[ $preset != clean ]]; then

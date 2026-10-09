@@ -3,7 +3,7 @@ var CAPTURE_NAME = "omavoice.capture"
 var NODE_DESCRIPTION = "Omavoice"
 var PRESETS = ["meeting", "podcast", "clean"]
 var QUALITIES = ["good", "better", "best"]
-var ENGINES = ["auto", "rnnoise", "deepfilter"]
+var ENGINES = ["auto", "rnnoise", "deepfilter", "dpdfnet"]
 var EQ_CURVES = ["neutral", "warm", "clear", "bright"]
 
 function normalizePreset(value) {
@@ -228,32 +228,35 @@ function normalizeEngine(value) {
   return "auto"
 }
 
-function engineForPreset(preset, haveRnnoise, haveDeepfilter) {
+function engineForPreset(preset, haveRnnoise, haveDeepfilter, haveDpdfnet) {
   var value = normalizePreset(preset)
   if (value === "clean") return "clean"
+  if (haveDpdfnet) return "dpdfnet"
   if (value === "podcast" && haveDeepfilter) return "deepfilter"
   if (haveRnnoise) return "rnnoise"
   return "clean"
 }
 
-function resolveEngine(preset, engineSetting, haveRnnoise, haveDeepfilter) {
+function resolveEngine(preset, engineSetting, haveRnnoise, haveDeepfilter, haveDpdfnet) {
   var kind = normalizePreset(preset)
   if (kind === "clean") return "clean"
   var want = normalizeEngine(engineSetting)
-  if (want === "rnnoise" || want === "deepfilter") return want
-  return engineForPreset(kind, haveRnnoise, haveDeepfilter)
+  if (want === "rnnoise" || want === "deepfilter" || want === "dpdfnet") return want
+  return engineForPreset(kind, haveRnnoise, haveDeepfilter, haveDpdfnet)
 }
 
 function engineChoiceHint(value) {
   var want = normalizeEngine(value)
   if (want === "rnnoise") return "Neural denoise. Never stacked with DeepFilterNet."
   if (want === "deepfilter") return "Heavier denoise. Never stacked with RNNoise."
-  return "Meeting: RNNoise. Podcast: DeepFilterNet if installed, else RNNoise. Clean: none."
+  if (want === "dpdfnet") return "DPDFNet from HushMic. Cleanest, about 40 ms later."
+  return "DPDFNet if installed. Else Meeting: RNNoise, Podcast: DeepFilterNet. Clean: none."
 }
 
 function engineLabel(engine) {
   var want = String(engine || "")
   if (want === "deepfilter") return "DeepFilterNet"
+  if (want === "dpdfnet") return "DPDFNet"
   if (want === "rnnoise") return "RNNoise"
   if (want === "clean") return "Clean"
   return "Auto"
@@ -461,16 +464,16 @@ function qualityParams(preset, quality) {
   var kind = normalizePreset(preset)
   var level = normalizeQuality(quality)
   if (kind === "podcast") {
-    if (level === "good") return { vad: 75.0, grace: 400, dfn: 50 }
-    if (level === "best") return { vad: 90.0, grace: 150, dfn: 85 }
-    return { vad: 85.0, grace: 200, dfn: 70 }
+    if (level === "good") return { vad: 75.0, grace: 400, dfn: 50, dp: 24 }
+    if (level === "best") return { vad: 90.0, grace: 150, dfn: 85, dp: 100 }
+    return { vad: 85.0, grace: 200, dfn: 70, dp: 48 }
   }
-  if (level === "good") return { vad: 70.0, grace: 500, dfn: 50 }
-  if (level === "best") return { vad: 85.0, grace: 250, dfn: 85 }
-  return { vad: 80.0, grace: 400, dfn: 70 }
+  if (level === "good") return { vad: 70.0, grace: 500, dfn: 50, dp: 24 }
+  if (level === "best") return { vad: 85.0, grace: 250, dfn: 85, dp: 100 }
+  return { vad: 80.0, grace: 400, dfn: 70, dp: 48 }
 }
 
-function setupGuide(engine, haveRnnoise, haveDeepfilter, preset) {
+function setupGuide(engine, haveRnnoise, haveDeepfilter, preset, haveDpdfnet) {
   var kind = normalizePreset(preset)
   var want = normalizeEngine(engine)
   var none = { needed: false, hero: "", command: "", body: "" }
@@ -493,9 +496,20 @@ function setupGuide(engine, haveRnnoise, haveDeepfilter, preset) {
     }
   }
 
+  function dpdfnetRow() {
+    return {
+      needed: true,
+      hero: "Install DPDFNet",
+      command: "omarchy pkg aur add hushmic-bin",
+      body: "DPDFNet ships with HushMic. Reload after installing it."
+    }
+  }
+
   if (kind === "clean") return none
   if (want === "rnnoise") return haveRnnoise ? none : rnnoiseRow()
   if (want === "deepfilter") return haveDeepfilter ? none : dfnRow()
+  if (want === "dpdfnet") return haveDpdfnet ? none : dpdfnetRow()
+  if (haveDpdfnet) return none
   if (kind === "podcast" && haveDeepfilter) return none
   if (haveRnnoise) return none
   return rnnoiseRow()

@@ -223,6 +223,29 @@ test("engineForPreset uses DeepFilterNet only for podcast when present", () => {
   assert.equal(Model.engineForPreset("meeting", false, false), "clean")
 })
 
+test("engineForPreset prefers DPDFNet for Meeting and Podcast when HushMic is installed", () => {
+  assert.equal(Model.engineForPreset("meeting", true, true, true), "dpdfnet")
+  assert.equal(Model.engineForPreset("podcast", true, true, true), "dpdfnet")
+  assert.equal(Model.engineForPreset("clean", true, true, true), "clean")
+  assert.equal(Model.engineForPreset("meeting", false, false, true), "dpdfnet")
+  assert.equal(Model.resolveEngine("meeting", "auto", true, true, true), "dpdfnet")
+  assert.equal(Model.resolveEngine("podcast", "rnnoise", true, true, true), "rnnoise")
+  assert.equal(Model.resolveEngine("meeting", "dpdfnet", true, true, false), "dpdfnet")
+  assert.equal(Model.resolveEngine("clean", "dpdfnet", true, true, true), "clean")
+  assert.equal(Model.normalizeEngine("DPDFNet"), "dpdfnet")
+  assert.equal(Model.engineLabel("dpdfnet"), "DPDFNet")
+  assert.match(Model.engineChoiceHint("dpdfnet"), /HushMic/)
+})
+
+test("setupGuide asks for HushMic when DPDFNet is picked but missing", () => {
+  const missing = Model.setupGuide("dpdfnet", true, true, "meeting", false)
+  assert.equal(missing.needed, true)
+  assert.match(missing.command, /hushmic-bin/)
+  assert.equal(Model.setupGuide("dpdfnet", true, true, "meeting", true).needed, false)
+  assert.equal(Model.setupGuide("dpdfnet", false, false, "clean", false).needed, false)
+  assert.equal(Model.setupGuide("auto", false, false, "meeting", true).needed, false)
+})
+
 test("resolveEngine honors an explicit picker and keeps Clean HPF-only", () => {
   assert.equal(Model.normalizeEngine(""), "auto")
   assert.equal(Model.normalizeEngine("DEEPFILTER"), "deepfilter")
@@ -284,12 +307,12 @@ test("clampGainDb and gainDbToLinear convert output trim", () => {
 })
 
 test("qualityParams matches the dump VAD / DFN tables", () => {
-  assert.deepEqual(Model.qualityParams("meeting", "better"), { vad: 80.0, grace: 400, dfn: 70 })
-  assert.deepEqual(Model.qualityParams("meeting", "good"), { vad: 70.0, grace: 500, dfn: 50 })
-  assert.deepEqual(Model.qualityParams("meeting", "best"), { vad: 85.0, grace: 250, dfn: 85 })
-  assert.deepEqual(Model.qualityParams("podcast", "better"), { vad: 85.0, grace: 200, dfn: 70 })
-  assert.deepEqual(Model.qualityParams("podcast", "good"), { vad: 75.0, grace: 400, dfn: 50 })
-  assert.deepEqual(Model.qualityParams("podcast", "best"), { vad: 90.0, grace: 150, dfn: 85 })
+  assert.deepEqual(Model.qualityParams("meeting", "better"), { vad: 80.0, grace: 400, dfn: 70, dp: 48 })
+  assert.deepEqual(Model.qualityParams("meeting", "good"), { vad: 70.0, grace: 500, dfn: 50, dp: 24 })
+  assert.deepEqual(Model.qualityParams("meeting", "best"), { vad: 85.0, grace: 250, dfn: 85, dp: 100 })
+  assert.deepEqual(Model.qualityParams("podcast", "better"), { vad: 85.0, grace: 200, dfn: 70, dp: 48 })
+  assert.deepEqual(Model.qualityParams("podcast", "good"), { vad: 75.0, grace: 400, dfn: 50, dp: 24 })
+  assert.deepEqual(Model.qualityParams("podcast", "best"), { vad: 90.0, grace: 150, dfn: 85, dp: 100 })
 })
 
 test("setupGuide asks for the chosen engine when the plugin is missing", () => {

@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "id": "gigasolo.omavoice",
   "name": "Omavoice",
-  "version": "0.3.2",
+  "version": "0.3.2-dpdfnet.1",
   "author": "GigaSolo",
   "license": "MIT",
   "homepage": "https://github.com/gigasolo/omavoice",
-  "description": "A virtual microphone for Zoom, Meet, and OBS. Meeting / Podcast / Clean, Voice looks, and an RNNoise or DeepFilterNet picker.",
+  "description": "A virtual microphone for Zoom, Meet, and OBS. Meeting / Podcast / Clean, Voice looks, and an RNNoise, DeepFilterNet or DPDFNet picker.",
   "kinds": [
     "service",
     "bar-widget"
@@ -17,7 +17,7 @@
   },
   "barWidget": {
     "displayName": "Omavoice",
-    "description": "Virtual mic for calls and recording. Meeting / Podcast / Clean, Voice looks, RNNoise or DeepFilterNet.",
+    "description": "Virtual mic for calls and recording. Meeting / Podcast / Clean, Voice looks, RNNoise, DeepFilterNet or DPDFNet.",
     "category": "Audio",
     "aliases": [
       "omavoice",
@@ -72,7 +72,8 @@
         "options": [
           "auto",
           "rnnoise",
-          "deepfilter"
+          "deepfilter",
+          "dpdfnet"
         ],
         "defaultValue": "auto"
       },

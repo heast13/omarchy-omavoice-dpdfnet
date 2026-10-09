@@ -1061,13 +1061,14 @@ Panel {
                 model: [
                   { value: "auto", label: "Auto" },
                   { value: "rnnoise", label: "RNNoise" },
-                  { value: "deepfilter", label: "DeepFilterNet" }
+                  { value: "deepfilter", label: "DeepFilterNet" },
+                  { value: "dpdfnet", label: "DPDFNet" }
                 ]
                 CursorSurface {
                   required property var modelData
                   required property int index
                   readonly property bool isCurrent: service.engineSetting === modelData.value
-                  width: Math.floor((parent.width - Style.space(6) * 2) / 3)
+                  width: Math.floor((parent.width - Style.space(6) * 3) / 4)
                   implicitHeight: Style.space(32)
                   hasCursor: root.cursorActive && root.focusSection === "engine" && root.engineIndex === index
                   foreground: root.foreground

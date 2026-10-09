@@ -27,12 +27,16 @@ else
   rm -f "$live"
 fi
 
-meeting="$(dump meeting)"
-meeting_good="$(dump meeting --quality good)"
-meeting_best="$(dump meeting --quality best)"
-podcast="$(dump podcast)"
-podcast_good="$(dump podcast --quality good)"
-podcast_best="$(dump podcast --quality best)"
+# Auto prefers DPDFNet when HushMic is installed, so the RNNoise / DFN
+# tables below pin the engine Auto used to pick without it.
+podcast_engine=rnnoise
+[[ -f /usr/lib/ladspa/libdeep_filter_ladspa.so || -f /usr/lib64/ladspa/libdeep_filter_ladspa.so ]] && podcast_engine=deepfilter
+meeting="$(dump meeting --engine rnnoise)"
+meeting_good="$(dump meeting --engine rnnoise --quality good)"
+meeting_best="$(dump meeting --engine rnnoise --quality best)"
+podcast="$(dump podcast --engine $podcast_engine)"
+podcast_good="$(dump podcast --engine $podcast_engine --quality good)"
+podcast_best="$(dump podcast --engine $podcast_engine --quality best)"
 clean="$(dump clean)"
 
 echo "$meeting" | grep -A2 'name = libpipewire-module-filter-chain' | grep -q nofail \
@@ -182,7 +186,28 @@ echo "$podcast_rn" | grep -q 'bq_highpass' || fail "podcast RNNoise must high-pa
 echo "$podcast_rn" | grep -q 'monitor.mode' && fail "podcast RNNoise must not enable AEC"
 echo "$podcast_rn" | grep -q 'deep_filter' && fail "podcast RNNoise must not stack DFN"
 
-echo "$meeting" | grep -q 'noise_suppressor_mono' || fail "auto meeting must still use RNNoise"
+meeting_auto="$(dump meeting)"
+podcast_auto="$(dump podcast)"
+if [[ -f /usr/lib/ladspa/libdpdfnet_ladspa.so && -f /usr/share/hushmic/models/dpdfnet8_48khz_hr.onnx ]]; then
+  echo "$meeting_auto" | grep -q 'dpdfnet_mono' || fail "auto meeting must use DPDFNet when HushMic is installed"
+  echo "$podcast_auto" | grep -q 'dpdfnet_mono' || fail "auto podcast must use DPDFNet when HushMic is installed"
+else
+  echo "$meeting_auto" | grep -q 'noise_suppressor_mono' || fail "auto meeting must still use RNNoise"
+fi
+
+meeting_dp="$(dump meeting --engine dpdfnet)"
+echo "$meeting_dp" | grep -q 'monitor.mode = true' || fail "meeting DPDFNet must keep AEC"
+echo "$meeting_dp" | grep -q 'webrtc.noise_suppression = false' || fail "meeting DPDFNet must not stack WebRTC NS"
+echo "$meeting_dp" | grep -q 'dpdfnet_mono' || fail "--engine dpdfnet must use dpdfnet_mono"
+echo "$meeting_dp" | grep -q 'denoise:Input' || fail "DPDFNet ports are Input/Output"
+echo "$meeting_dp" | grep -q '"Mode" = 0' || fail "DPDFNet must run in suppress mode"
+echo "$meeting_dp" | grep -q '"Attenuation Limit (dB)" = 48' || fail "DPDFNet better cap must be 48 dB"
+echo "$meeting_dp" | grep -qE 'noise_suppressor|deep_filter' && fail "DPDFNet must not stack RNNoise or DFN"
+dump podcast --engine dpdfnet --quality good | grep -q '"Attenuation Limit (dB)" = 24' \
+  || fail "DPDFNet good cap must be 24 dB"
+dump podcast --engine dpdfnet --quality best | grep -q '"Attenuation Limit (dB)" = 100' \
+  || fail "DPDFNet best cap must be 100 dB"
+dump clean --engine dpdfnet | grep -q 'dpdfnet' && fail "clean must not run DPDFNet when engine is forced"
 
 clean_forced="$(dump clean --engine deepfilter)"
 echo "$clean_forced" | grep -q 'bq_highpass' || fail "clean stays high-pass when engine is forced"

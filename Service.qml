@@ -15,6 +15,7 @@ Item {
   property bool probed: false
   property bool haveRnnoise: false
   property bool haveDeepfilter: false
+  property bool haveDpdfnet: false
   property bool haveWebrtc: false
   property string lastError: ""
   property string actionStatus: ""
@@ -89,8 +90,8 @@ Item {
   readonly property string previousAudioSource: String(setting("previousAudioSource", "") || "")
   readonly property bool setDefaultSource: setting("setDefaultSource", true) !== false
   readonly property string engineSetting: Model.normalizeEngine(setting("engine", "auto"))
-  readonly property string engine: Model.resolveEngine(preset, engineSetting, haveRnnoise, haveDeepfilter)
-  readonly property var setup: Model.setupGuide(engineSetting, haveRnnoise, haveDeepfilter, preset)
+  readonly property string engine: Model.resolveEngine(preset, engineSetting, haveRnnoise, haveDeepfilter, haveDpdfnet)
+  readonly property var setup: Model.setupGuide(engineSetting, haveRnnoise, haveDeepfilter, preset, haveDpdfnet)
   readonly property bool setupNeeded: setup.needed
   readonly property real outputGainDb: Model.outputGainDbForPreset(preset, settings)
   readonly property real captureGainDb: Model.captureGainDbForPreset(preset, settings)
@@ -266,6 +267,8 @@ Item {
       args.push("denoise:VAD Grace Period (ms)", String(qp.grace))
     } else if (engine === "deepfilter") {
       args.push("denoise:Attenuation Limit (dB)", String(qp.dfn))
+    } else if (engine === "dpdfnet") {
+      args.push("denoise:Attenuation Limit (dB)", String(qp.dp))
     }
     if (eqCurve) {
       var bands = eqBands
@@ -410,7 +413,7 @@ Item {
   }
 
   // Re-scan LADSPA plugins and rebuild the chain. Needed after installing
-  // RNNoise or DeepFilterNet without restarting the shell.
+  // RNNoise, DeepFilterNet or DPDFNet without restarting the shell.
   function reload() {
     reloading = true
     busyReason = "reload"
@@ -553,11 +556,13 @@ Item {
           var data = JSON.parse(text)
           haveRnnoise = data.rnnoise === true
           haveDeepfilter = data.deepfilter === true
+          haveDpdfnet = data.dpdfnet === true
           haveWebrtc = data.webrtc === true
           lastError = ""
         } catch (e) {
           haveRnnoise = false
           haveDeepfilter = false
+          haveDpdfnet = false
           haveWebrtc = false
           lastError = Model.hostErrorText("probe")
           root.reloading = false

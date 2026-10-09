@@ -5,6 +5,7 @@ set -euo pipefail
 have_rnnoise=false
 have_deepfilter=false
 have_webrtc=false
+have_dpdfnet=false
 
 for candidate in /usr/lib/ladspa/librnnoise_ladspa.so /usr/lib64/ladspa/librnnoise_ladspa.so; do
   [[ -f $candidate ]] && have_rnnoise=true && break
@@ -12,8 +13,12 @@ done
 for candidate in /usr/lib/ladspa/libdeep_filter_ladspa.so /usr/lib64/ladspa/libdeep_filter_ladspa.so; do
   [[ -f $candidate ]] && have_deepfilter=true && break
 done
+# HushMic's plugin loads its model from /usr/share/hushmic on its own.
+for candidate in /usr/lib/ladspa/libdpdfnet_ladspa.so /usr/lib64/ladspa/libdpdfnet_ladspa.so; do
+  [[ -f $candidate && -f /usr/share/hushmic/models/dpdfnet8_48khz_hr.onnx ]] && have_dpdfnet=true && break
+done
 for candidate in /usr/lib/spa-0.2/aec/libspa-aec-webrtc.so /usr/lib64/spa-0.2/aec/libspa-aec-webrtc.so; do
   [[ -f $candidate ]] && have_webrtc=true && break
 done
 
-printf '{"rnnoise":%s,"deepfilter":%s,"webrtc":%s}\n' "$have_rnnoise" "$have_deepfilter" "$have_webrtc"
+printf '{"rnnoise":%s,"deepfilter":%s,"dpdfnet":%s,"webrtc":%s}\n' "$have_rnnoise" "$have_deepfilter" "$have_dpdfnet" "$have_webrtc"

@@ -73,7 +73,15 @@ Do not symlink the checkout into `~/.config/omarchy/plugins` — Omarchy refuses
 omarchy pkg aur add libdeep_filter_ladspa-bin
 ```
 
-**Auto** keeps today’s policy: Meeting uses RNNoise, Podcast uses DeepFilterNet3 when that plugin is present (otherwise RNNoise), Clean is high-pass only. On the PRESET tune page you can pin **RNNoise** or **DeepFilterNet** instead. The engines never stack. If the chosen engine is missing, the panel shows the install command; click **reload** next to on/off after installing. You do not restart the shell.
+### Optional DPDFNet engine
+
+```sh
+omarchy pkg aur add hushmic-bin
+```
+
+DPDFNet (Ceva, a DeepFilterNet2 descendant) comes as a LADSPA plugin with HushMic. Omavoice only loads the plugin; the HushMic app does not need to run. When it is installed, **Auto** uses DPDFNet for Meeting and Podcast. It adds about 40 ms of latency.
+
+**Auto** without DPDFNet keeps today’s policy: Meeting uses RNNoise, Podcast uses DeepFilterNet3 when that plugin is present (otherwise RNNoise), Clean is high-pass only. On the PRESET tune page you can pin **RNNoise**, **DeepFilterNet** or **DPDFNet** instead. The engines never stack. If the chosen engine is missing, the panel shows the install command; click **reload** next to on/off after installing. You do not restart the shell.
 
 ## Use
 
