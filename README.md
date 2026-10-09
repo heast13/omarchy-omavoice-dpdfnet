@@ -39,7 +39,7 @@ Not affiliated with or endorsed by GigaSolo, Ceva, or 37signals.
 
 Natural uses the same Voice look as Denoise, so you tune your voice once.
 
-Right-click the mark to toggle. Open the panel to switch the mode and pick a microphone. The selected mic row shows a live level and a hairline of what Omavoice is sending. Other rows stay quiet so a Bluetooth headset is not grabbed. The settings on MODE set a Voice look (Neutral / Warm / Clear / Bright / Custom) with Body / Presence / Air knobs (Custom keeps your own values when you switch looks), a High-pass switch, the Strength of the denoise, and the DPDFNet Model. High-pass works in every mode; Strength and Model only apply to Denoise; on Clean, Voice is disabled too.
+Right-click the mark to toggle. Open the panel to switch the mode and pick a microphone. The selected mic row shows a live level and a hairline of what Omavoice is sending. Other rows stay quiet so a Bluetooth headset is not grabbed. The settings on MODE set a Voice look (Neutral / Warm / Clear / Bright / Custom) with Body / Presence / Air knobs (Custom keeps your own values when you switch looks), a High-pass switch, a De-esser (Off / Light / Medium / Strong), the Strength of the denoise, and the DPDFNet Model. High-pass works in every mode; the De-esser in Denoise and Natural; Strength and Model only apply to Denoise; on Clean, Voice is disabled too.
 
 In the app itself, choose **Omavoice** as the microphone and turn *its* noise cancellation off. Two denoisers stacked sound hollow.
 
@@ -93,7 +93,7 @@ On slow machines, also install `rtkit`. PipeWire and DPDFNet then run with realt
 | Action | How |
 | --- | --- |
 | Open or close the panel | Left-click the mark |
-| Tune Denoise | Settings on MODE: Voice look, High-pass, Softer / Balanced / Stronger, Auto / Large / Small |
+| Tune Denoise | Settings on MODE: Voice look, High-pass, De-esser, Softer / Balanced / Stronger, Auto / Large / Small |
 | Realtime audio | **Install rtkit** in the panel, when rtkit is missing |
 | Automatic microphone | AUTOMATIC on the MICROPHONE header |
 | Toggle Omavoice | Right-click, or `o` |

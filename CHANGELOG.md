@@ -8,6 +8,20 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+### Added
+
+- **De-esser** on the MODE settings: Off / Light / Medium / Strong, for Denoise
+  and Natural. LSP's de-esser after the voice EQ compresses only the band above
+  4 kHz when S sounds hit it (about -4 / -11 / -18 dB on a loud 7 kHz tone,
+  500 Hz untouched). Off by default, switches live.
+
+### Fixed
+
+- Settings changed before anything had listened to Omavoice since its start
+  (panel closed, fresh host) were dropped by PipeWire and only applied after
+  the next restart. Omavoice now restarts that silent host with the new
+  values.
+
 ## [0.7.1] — 2026-10-10
 
 ### Added
