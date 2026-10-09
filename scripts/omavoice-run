@@ -162,6 +162,18 @@ dynamics_nodes() {
 EOF
 }
 
+# A parent can cap realtime CPU time (RLIMIT_RTTIME) and children cannot
+# raise the cap. Quickshell runs with 0 µs. rtkit would still grant
+# realtime, and the kernel then SIGKILLs the host on its first busy cycle,
+# over and over while anything listens. Ask for realtime only when the cap
+# leaves room for it.
+rt_args="{ }"
+rt_hard=$(ulimit -HR 2>/dev/null || echo unlimited)
+if [[ $rt_hard != unlimited ]] && (( rt_hard < 50000 )); then
+  rt_args="{ rtkit.enabled = false rtportal.enabled = false }"
+  export HUSHMIC_WORKER_RT=0
+fi
+
 cat >"$conf" <<EOF
 context.properties = {
     log.level = 0
@@ -174,7 +186,7 @@ context.spa-libs = {
 
 context.modules = [
     { name = libpipewire-module-rt
-        args = { }
+        args = $rt_args
         flags = [ ifexists nofail ]
     }
     { name = libpipewire-module-protocol-native }

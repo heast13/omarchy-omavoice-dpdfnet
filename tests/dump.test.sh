@@ -207,4 +207,9 @@ evil=$?
 set -e
 [[ $evil -eq 2 ]] || fail "quoted --target must be rejected, got $evil"
 
+rt_capped="$(bash -c 'ulimit -R 0; exec "$0" "$@"' "$run" --dump --preset podcast --target "$target" --dir "$root")"
+echo "$rt_capped" | grep -q 'rtkit.enabled = false' \
+  || fail "a 0 µs realtime cap must keep the host off rtkit, or the kernel kills it"
+[[ $(ulimit -HR) == unlimited ]] && { echo "$podcast" | grep -q 'rtkit.enabled = false' && fail "an open cap must allow rtkit"; }
+
 echo "dump.test: ok"
