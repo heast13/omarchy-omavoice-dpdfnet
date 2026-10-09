@@ -165,10 +165,25 @@ EOF
 # A parent can cap realtime CPU time (RLIMIT_RTTIME) and children cannot
 # raise the cap. Quickshell runs with 0 µs. rtkit would still grant
 # realtime, and the kernel then SIGKILLs the host on its first busy cycle,
-# over and over while anything listens. Ask for realtime only when the cap
-# leaves room for it.
+# over and over while anything listens. So the host runs as a transient
+# systemd --user service with the manager's limits, like PipeWire itself.
+# Without systemd it runs here and asks for realtime only when the
+# inherited cap leaves room for it.
+use_systemd=0
+if [[ -z ${OMAVOICE_NO_SYSTEMD:-} ]] && command -v systemd-run >/dev/null \
+  && systemctl --user show -p Version >/dev/null 2>&1; then
+  use_systemd=1
+fi
 rt_args="{ }"
-rt_hard=$(ulimit -HR 2>/dev/null || echo unlimited)
+if [[ $use_systemd -eq 1 ]]; then
+  rt_hard=$(systemctl --user show -p DefaultLimitRTTIME --value 2>/dev/null || echo infinity)
+  [[ $rt_hard == infinity || -z $rt_hard ]] && rt_hard=unlimited
+else
+  rt_hard=$(ulimit -HR 2>/dev/null || echo unlimited)
+fi
+if [[ $rt_hard != unlimited && ! $rt_hard =~ ^[0-9]+$ ]]; then
+  rt_hard=0
+fi
 if [[ $rt_hard != unlimited ]] && (( rt_hard < 50000 )); then
   rt_args="{ rtkit.enabled = false rtportal.enabled = false }"
   export HUSHMIC_WORKER_RT=0
@@ -476,6 +491,10 @@ for obj in data:
 # whose argv text contains that path.
 drop_leftover_host() {
   local pid cmd
+  # A host whose wrapper died hard keeps its unit; stop those first.
+  if [[ $use_systemd -eq 1 ]]; then
+    systemctl --user stop 'omavoice-host-*.service' >/dev/null 2>&1 || true
+  fi
   for pid in $(pgrep -x pipewire || true); do
     cmd=$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)
     case $cmd in
@@ -518,24 +537,55 @@ for stale in "$runtime_dir"/host.conf "$runtime_dir"/host.*.conf; do
   rm -f -- "$stale"
 done
 
+# launcher_pid is what we wait on: pipewire itself, or systemd-run --wait
+# when the host runs as a unit. pipewire_pid is the real pipewire either way.
+launcher_pid=""
 pipewire_pid=""
-stop_pipewire() {
-  if [[ -n $pipewire_pid ]]; then
-    kill "$pipewire_pid" 2>/dev/null || true
-    wait "$pipewire_pid" 2>/dev/null || true
-    pipewire_pid=""
+unit="omavoice-host-$$"
+stop_host() {
+  if [[ $use_systemd -eq 1 ]]; then
+    systemctl --user stop "$unit.service" >/dev/null 2>&1 || true
+  elif [[ -n $launcher_pid ]]; then
+    kill "$launcher_pid" 2>/dev/null || true
+  fi
+  if [[ -n $launcher_pid ]]; then
+    wait "$launcher_pid" 2>/dev/null || true
+    launcher_pid=""
   fi
 }
-trap stop_pipewire EXIT TERM INT
+trap stop_host EXIT TERM INT
 
-/usr/bin/pipewire -c "$conf" &
-pipewire_pid=$!
+if [[ $use_systemd -eq 1 ]]; then
+  # The unit does not inherit our env: hand over what the plugins read.
+  env_args=()
+  for v in HUSHMIC_MODEL_PATH HUSHMIC_FALLBACK_MODEL_PATH HUSHMIC_DSP_TIER HUSHMIC_WORKER_RT \
+    ORT_DYLIB_PATH LADSPA_PATH LV2_PATH PIPEWIRE_RUNTIME_DIR PIPEWIRE_REMOTE; do
+    [[ -n ${!v:-} ]] && env_args+=("--setenv=$v=${!v}")
+  done
+  systemd-run --user --quiet --collect --pipe --wait --unit="$unit" \
+    --description="Omavoice host" -p TimeoutStopSec=3 "${env_args[@]}" \
+    /usr/bin/pipewire -c "$conf" &
+  launcher_pid=$!
+  for i in $(seq 1 50); do
+    kill -0 "$launcher_pid" 2>/dev/null || exit 1
+    pipewire_pid=$(systemctl --user show -p MainPID --value "$unit.service" 2>/dev/null || true)
+    [[ -n $pipewire_pid && $pipewire_pid != 0 ]] && break
+    pipewire_pid=""
+    sleep 0.1
+  done
+  [[ -n $pipewire_pid ]] || { echo "omavoice-run: host unit did not start" >&2; exit 1; }
+else
+  /usr/bin/pipewire -c "$conf" &
+  launcher_pid=$!
+  pipewire_pid=$launcher_pid
+fi
+
 omavoice_ready() {
   pw-cli ls Node 2>/dev/null | grep -Eq 'node\.name = "omavoice"$' || return 1
   pw-cli ls Client 2>/dev/null | grep -Fq "pipewire.sec.pid = \"$pipewire_pid\""
 }
 for i in $(seq 1 50); do
-  kill -0 "$pipewire_pid" 2>/dev/null || exit 1
+  kill -0 "$launcher_pid" 2>/dev/null || exit 1
   omavoice_ready && break
   sleep 0.1
 done
@@ -543,7 +593,7 @@ if ! omavoice_ready; then
   echo "omavoice-run: omavoice did not appear in PipeWire" >&2
   exit 1
 fi
-wait "$pipewire_pid"
-status=$?
-pipewire_pid=""
+status=0
+wait "$launcher_pid" || status=$?
+launcher_pid=""
 exit "$status"

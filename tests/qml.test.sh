@@ -4,6 +4,8 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 fail() { echo "qml.test: $*" >&2; exit 1; }
 
+grep -q 'systemd-run --user' "$root/scripts/omavoice-run" || fail "the host must run as a systemd unit to escape the shell's realtime cap"
+grep -q "systemctl --user stop 'omavoice-host-\*.service'" "$root/scripts/omavoice-run" || fail "a start must stop leftover host units"
 grep -q 'currentHostKey()' "$root/Service.qml" || fail "a model switch must restart the host through the host key"
 grep -q 'omarchy-launch-floating-terminal-with-presentation' "$root/Service.qml" || fail "rtkit install needs a terminal for sudo"
 [[ -x $root/scripts/omavoice-rtkit ]] || fail "omavoice-rtkit must be executable"

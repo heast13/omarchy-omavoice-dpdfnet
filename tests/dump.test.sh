@@ -207,9 +207,15 @@ evil=$?
 set -e
 [[ $evil -eq 2 ]] || fail "quoted --target must be rejected, got $evil"
 
-rt_capped="$(bash -c 'ulimit -R 0; exec "$0" "$@"' "$run" --dump --preset podcast --target "$target" --dir "$root")"
+rt_capped="$(OMAVOICE_NO_SYSTEMD=1 bash -c 'ulimit -R 0; exec "$0" "$@"' "$run" --dump --preset podcast --target "$target" --dir "$root")"
 echo "$rt_capped" | grep -q 'rtkit.enabled = false' \
-  || fail "a 0 µs realtime cap must keep the host off rtkit, or the kernel kills it"
+  || fail "a 0 µs realtime cap must keep a direct host off rtkit, or the kernel kills it"
+if command -v systemd-run >/dev/null && systemctl --user show -p Version >/dev/null 2>&1 \
+  && [[ $(systemctl --user show -p DefaultLimitRTTIME --value) == infinity ]]; then
+  unit_capped="$(bash -c 'ulimit -R 0; exec "$0" "$@"' "$run" --dump --preset podcast --target "$target" --dir "$root")"
+  echo "$unit_capped" | grep -q 'rtkit.enabled = false' \
+    && fail "a systemd unit host escapes the shell's cap and must keep rtkit"
+fi
 [[ $(ulimit -HR) == unlimited ]] && { echo "$podcast" | grep -q 'rtkit.enabled = false' && fail "an open cap must allow rtkit"; }
 
 echo "dump.test: ok"
