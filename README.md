@@ -39,7 +39,7 @@ Not affiliated with or endorsed by GigaSolo, Ceva, or 37signals.
 
 Natural uses the same Voice look as Denoise, so you tune your voice once.
 
-Right-click the mark to toggle. Open the panel to switch the mode and pick a microphone. The selected mic row shows a live level and a hairline of what Omavoice is sending. Other rows stay quiet so a Bluetooth headset is not grabbed. The settings on MODE set a Voice look (Neutral / Warm / Clear / Bright) with Body / Presence / Air knobs, a High-pass switch, the Strength of the denoise, and the DPDFNet Model. High-pass works in every mode; Strength and Model only apply to Denoise; on Clean, Voice is disabled too.
+Right-click the mark to toggle. Open the panel to switch the mode and pick a microphone. The selected mic row shows a live level and a hairline of what Omavoice is sending. Other rows stay quiet so a Bluetooth headset is not grabbed. The settings on MODE set a Voice look (Neutral / Warm / Clear / Bright / Custom) with Body / Presence / Air knobs (Custom keeps your own values when you switch looks), a High-pass switch, the Strength of the denoise, and the DPDFNet Model. High-pass works in every mode; Strength and Model only apply to Denoise; on Clean, Voice is disabled too.
 
 In the app itself, choose **Omavoice** as the microphone and turn *its* noise cancellation off. Two denoisers stacked sound hollow.
 

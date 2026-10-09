@@ -12,6 +12,8 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ### Added
 
+- **Custom** Voice look. It starts flat, you set Body / Presence / Air, and
+  it keeps those values when you switch to another look and back.
 - **High-pass** switch on the MODE settings, for all modes. Off drops the
   corner to 10 Hz (DC only), live, without restarting the host.
 
