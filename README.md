@@ -6,14 +6,14 @@
 
 <p align="center">
   <strong>Your voice, better heard.</strong><br>
-  A virtual microphone with DPDFNet noise suppression. One source. Two modes. Noise stays on this side of the call.
+  A virtual microphone with DPDFNet noise suppression. One source. Three modes. Noise stays on this side of the call.
 </p>
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/omarchy-4%20Quattro-0ea5e9?style=flat-square" alt="Omarchy 4 Quattro">
   <img src="https://img.shields.io/badge/pipewire-filter--chain-a3e635?style=flat-square" alt="PipeWire filter-chain">
-  <img src="https://img.shields.io/badge/version-0.4.0-111827?style=flat-square" alt="Version 0.4.0">
+  <img src="https://img.shields.io/badge/version-0.5.0-111827?style=flat-square" alt="Version 0.5.0">
 </p>
 
 <p align="center">
@@ -31,13 +31,15 @@ Not affiliated with or endorsed by GigaSolo, Ceva, or 37signals.
 
 ## Modes
 
-| | Denoise | Clean |
-| --- | --- | --- |
-| **For** | Calls, OBS, interviews, recording | Program mixes, music beds |
-| **Does** | High-pass + DPDFNet + voice EQ + compressor | High-pass only |
-| **Keeps** | Speech that sounds finished | Applause, keys, and music |
+| | Denoise | Natural | Clean |
+| --- | --- | --- | --- |
+| **For** | Calls, OBS, interviews, recording | Quiet rooms, voice with ambience | Program mixes, music beds |
+| **Does** | High-pass + DPDFNet + voice EQ + compressor | High-pass + voice EQ + compressor | High-pass only |
+| **Keeps** | Speech that sounds finished | The room around your voice | Applause, keys, and music |
 
-Right-click the mark to toggle. Open the panel to switch the mode and pick a microphone. The selected mic row shows a live level and a hairline of what Omavoice is sending. Other rows stay quiet so a Bluetooth headset is not grabbed. The settings on MODE set a Voice look (Neutral / Warm / Clear / Bright) with Body / Presence / Air knobs, and the Strength of the denoise. On Clean, both are visible and disabled.
+Natural uses the same Voice look as Denoise, so you tune your voice once.
+
+Right-click the mark to toggle. Open the panel to switch the mode and pick a microphone. The selected mic row shows a live level and a hairline of what Omavoice is sending. Other rows stay quiet so a Bluetooth headset is not grabbed. The settings on MODE set a Voice look (Neutral / Warm / Clear / Bright) with Body / Presence / Air knobs, and the Strength of the denoise. Strength only applies to Denoise; on Clean, Voice is disabled too.
 
 In the app itself, choose **Omavoice** as the microphone and turn *its* noise cancellation off. Two denoisers stacked sound hollow.
 
@@ -69,7 +71,7 @@ dpdfnet8_48khz_hr.weights.f32   # /usr/share/hushmic/models/ (optional: faster n
 libonnxruntime.so               # /usr/lib/hushmic/libonnxruntime.so.1.*, renamed
 ```
 
-Copy all of them from the same release. Without DPDFNet, Denoise skips noise suppression and the compressor (high-pass and voice EQ stay), and the panel says **DPDFNet missing**. Click **reload** after installing or copying.
+Copy all of them from the same release. Without DPDFNet, Denoise falls back to the Natural chain, and the panel says **DPDFNet missing**. Click **reload** after installing or copying.
 
 Softer / Balanced / Stronger cap the suppression at 24 / 48 / 100 dB. DPDFNet adds about 40 ms of latency.
 
@@ -82,7 +84,7 @@ Softer / Balanced / Stronger cap the suppression at 24 / 48 / 100 dB. DPDFNet ad
 | Automatic microphone | AUTOMATIC on the MICROPHONE header |
 | Toggle Omavoice | Right-click, or `o` |
 | Reload processing | Reload next to on/off, or `r` |
-| Denoise / Clean | `d` / `c` |
+| Denoise / Natural / Clean | `d` / `n` / `c` |
 | Move | Arrow keys or `h` `j` `k` `l` |
 | Activate | Enter |
 | Close | Escape |
@@ -96,7 +98,7 @@ USB / laptop / BT mic
         │
         ▼
   Omavoice  (pipewire -c, its own client)
-   Denoise · Clean
+   Denoise · Natural · Clean
         │
         ▼
   call app · OBS · browser

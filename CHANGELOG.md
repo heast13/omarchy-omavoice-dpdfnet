@@ -8,6 +8,20 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-10-09
+
+### Added
+
+- **Natural** mode between Denoise and Clean: high-pass, voice EQ and the
+  compressor, no noise suppression. It shares the Voice look with Denoise.
+  Key `n`.
+
+### Changed
+
+- Strength is only active on Denoise.
+- Without DPDFNet, Denoise falls back to the Natural chain, compressor
+  included.
+
 ## [0.4.0] — 2026-10-09
 
 First release of the fork **Omavoice DPDFNet** (`heast13.omavoice-dpdfnet`),
@@ -380,7 +394,8 @@ Live level and engine picker. Notes is not in this release.
   guidance.
 - MIT license (GigaSolo LLC).
 
-[Unreleased]: https://github.com/heast13/omarchy-omavoice-dpdfnet/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/heast13/omarchy-omavoice-dpdfnet/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/heast13/omarchy-omavoice-dpdfnet/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/heast13/omarchy-omavoice-dpdfnet/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/gigasolo/omavoice/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/gigasolo/omavoice/compare/v0.3.0...v0.3.1

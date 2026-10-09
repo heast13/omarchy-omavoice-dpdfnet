@@ -43,7 +43,7 @@ echo "$full_conf" | grep -q "plugin = \"$fake/full/omavoice/dpdfnet/libdpdfnet_l
 if [[ ! -f /usr/lib/ladspa/libdpdfnet_ladspa.so && ! -f /usr/lib64/ladspa/libdpdfnet_ladspa.so ]]; then
   empty_conf="$(XDG_DATA_HOME=$fake/empty dump podcast)"
   echo "$empty_conf" | grep -q 'dpdfnet' && fail "podcast without DPDFNet must not load it"
-  echo "$empty_conf" | grep -q 'compressor_mono' && fail "podcast without DPDFNet must skip the compressor"
+  [[ $empty_conf == "$(dump natural)" ]] || fail "podcast without DPDFNet must fall back to the Natural graph"
   echo "$empty_conf" | grep -q 'name = eq_body' || fail "podcast without DPDFNet keeps voice EQ"
   [[ $(XDG_DATA_HOME=$fake/empty "$root/scripts/omavoice-probe") == '{"dpdfnet":false}' ]] \
     || fail "probe must report missing DPDFNet like omavoice-run"
@@ -52,6 +52,7 @@ fi
 podcast="$(dump podcast)"
 podcast_good="$(dump podcast --quality good)"
 podcast_best="$(dump podcast --quality best)"
+natural="$(dump natural)"
 clean="$(dump clean)"
 
 set +e
@@ -68,7 +69,7 @@ dangling=$?
 set -e
 [[ $dangling -eq 2 ]] || fail "a flag without a value must print usage, got $dangling"
 
-for conf in "$podcast" "$clean"; do
+for conf in "$podcast" "$natural" "$clean"; do
   echo "$conf" | grep -qE 'noise_suppressor|deep_filter|monitor.mode|echo-cancel|audio.aec|omavoice.aec' \
     && fail "RNNoise, DeepFilterNet and Meeting AEC must be gone"
 done
@@ -138,6 +139,17 @@ dump podcast --eq presence | grep -A5 'name = eq_body' | grep -q '"Gain" = -2.5'
 dump podcast --eq warm --eq-body-db 1 | grep -A5 'name = eq_body' | grep -q '"Gain" = 3.0' || fail "Warm --eq-body-db 1 must bake +3.0"
 dump podcast --eq warm --eq-body-db 12 | grep -A5 'name = eq_body' | grep -q '"Gain" = 8.0' || fail "Warm --eq-body-db 12 must clamp trim to +8.0"
 
+echo "$natural" | grep -q 'bq_highpass' || fail "natural must high-pass"
+echo "$natural" | grep -A5 'name = eq_body' | grep -q '"Gain" = -2.5' || fail "natural must run the Clear voice look by default"
+echo "$natural" | grep -q 'name = eq_air' || fail "natural must emit eq_air"
+echo "$natural" | grep -q 'dpdfnet' && fail "natural must not denoise"
+if [[ -f /usr/lib/lv2/lsp-plugins.lv2/compressor_mono.ttl ]]; then
+  echo "$natural" | grep -q 'compressor_mono' || fail "natural must compress"
+  echo "$natural" | grep -q 'limiter_mono' || fail "natural must limit"
+fi
+dump natural --eq bright | grep -A5 'name = eq_air' | grep -q '"Gain" = 2.5' || fail "natural must follow --eq"
+dump natural --quality best | grep -q 'Attenuation' && fail "natural ignores the denoise strength"
+
 echo "$clean" | awk '/node.name = "omavoice.capture"/,/playback.props/' | grep -q 'stream.dont-remix = true' \
   && fail "clean capture must remix stereo USB into MONO"
 echo "$clean" | grep -q 'bq_highpass' || fail "clean must high-pass"
@@ -147,12 +159,13 @@ echo "$clean" | grep -q 'dpdfnet' && fail "clean must not denoise"
 echo "$clean" | grep -q 'name = eq_body' && fail "clean must not emit voice EQ"
 echo "$clean" | grep -q 'bq_peaking' && fail "clean must not emit peaking EQ"
 echo "$clean" | grep -q 'bq_highshelf' && fail "clean must not emit highshelf EQ"
-echo "$clean" | grep -q 'compressor_mono' && fail "clean must not compress"
+echo "$clean" | grep -qE 'compressor_mono|limiter_mono' && fail "clean must not compress"
 
-for kind in podcast clean; do
+for kind in podcast natural clean; do
   conf=""
   case $kind in
     podcast) conf=$podcast ;;
+    natural) conf=$natural ;;
     clean) conf=$clean ;;
   esac
   echo "$conf" | grep -q 'name = preamp' || fail "$kind must emit a named preamp node"

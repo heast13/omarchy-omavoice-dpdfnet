@@ -1,7 +1,7 @@
 var NODE_NAME = "omavoice"
 var CAPTURE_NAME = "omavoice.capture"
 var NODE_DESCRIPTION = "Omavoice"
-var PRESETS = ["podcast", "clean"]
+var PRESETS = ["podcast", "natural", "clean"]
 var QUALITIES = ["good", "better", "best"]
 var EQ_CURVES = ["neutral", "warm", "clear", "bright"]
 
@@ -204,12 +204,16 @@ function restoreCaptureName(pinnedName, previousName, sources) {
 }
 
 function presetLabel(preset) {
-  if (normalizePreset(preset) === "clean") return "Clean"
+  var value = normalizePreset(preset)
+  if (value === "clean") return "Clean"
+  if (value === "natural") return "Natural"
   return "Denoise"
 }
 
 function presetHint(preset) {
-  if (normalizePreset(preset) === "clean") return "High-pass only — keeps music and program"
+  var value = normalizePreset(preset)
+  if (value === "clean") return "High-pass only — keeps music and program"
+  if (value === "natural") return "Voice EQ and compressor, no denoise — the room stays"
   return "DPDFNet denoise, voice EQ, compressor"
 }
 
@@ -400,7 +404,8 @@ function dpAttenuation(quality) {
 }
 
 function setupGuide(preset, haveDpdfnet) {
-  if (normalizePreset(preset) === "clean" || haveDpdfnet) return { needed: false, hero: "", body: "" }
+  // Only Denoise runs DPDFNet.
+  if (normalizePreset(preset) !== "podcast" || haveDpdfnet) return { needed: false, hero: "", body: "" }
   return {
     needed: true,
     hero: "DPDFNet missing",
@@ -418,7 +423,7 @@ function hostErrorText(kind, raw) {
 function statusText(state) {
   state = state || {}
   if (!state.enabled) return "Off"
-  if (state.setupNeeded && normalizePreset(state.preset) !== "clean") {
+  if (state.setupNeeded && normalizePreset(state.preset) === "podcast") {
     return String(state.setupHero || "Plugin not installed")
   }
   if (!state.targetName) return "No microphone"

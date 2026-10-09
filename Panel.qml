@@ -44,6 +44,7 @@ Panel {
 
   readonly property var presets: [
     { value: "podcast", label: "Denoise", hint: "Calls, OBS, recording" },
+    { value: "natural", label: "Natural", hint: "Voice EQ, room stays" },
     { value: "clean", label: "Clean", hint: "High-pass only" }
   ]
   readonly property var captureSources: {
@@ -501,6 +502,7 @@ Panel {
       onTextKey: function(t) {
         if (root.tuneOpen) return
         if (t === "d" || t === "D") root.choosePreset("podcast")
+        else if (t === "n" || t === "N") root.choosePreset("natural")
         else if (t === "c" || t === "C") root.choosePreset("clean")
         else if (t === "o" || t === "O") root.toggleEnabled()
         else if (t === "r" || t === "R") {
@@ -660,7 +662,7 @@ Panel {
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
                 iconText: "󰒓"
-                tooltipText: "Tune Denoise"
+                tooltipText: "Voice and Strength"
                 foreground: root.foreground
                 fontFamily: root.fontFamily
                 onClicked: root.showTune(true)
@@ -682,7 +684,7 @@ Panel {
                   required property var modelData
                   required property int index
                   readonly property bool isCurrent: service.preset === modelData.value
-                  width: Math.floor((parent.width - Style.space(6)) / 2)
+                  width: Math.floor((parent.width - Style.space(6) * 2) / 3)
                   implicitHeight: Style.space(36)
                   hasCursor: root.cursorActive && root.focusSection === "presets" && root.presetIndex === index
                   foreground: root.foreground
@@ -1119,7 +1121,7 @@ Panel {
 
           QualitySlider {
             title: "Strength"
-            enabled: service.preset !== "clean"
+            enabled: service.preset === "podcast"
             opacity: enabled ? 1 : 0.5
             quality: service.quality
             onChosen: function(value) { root.setPodcastQuality(value) }

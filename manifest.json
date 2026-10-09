@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "id": "heast13.omavoice-dpdfnet",
   "name": "Omavoice DPDFNet",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "author": "heast13",
   "license": "MIT",
   "homepage": "https://github.com/heast13/omarchy-omavoice-dpdfnet",
-  "description": "A DPDFNet virtual microphone for calls, OBS and recording. Denoise / Clean and Voice looks.",
+  "description": "A DPDFNet virtual microphone for calls, OBS and recording. Denoise / Natural / Clean and Voice looks.",
   "kinds": [
     "service",
     "bar-widget"
@@ -17,7 +17,7 @@
   },
   "barWidget": {
     "displayName": "Omavoice DPDFNet",
-    "description": "Virtual mic with DPDFNet noise suppression. Denoise / Clean and Voice looks.",
+    "description": "Virtual mic with DPDFNet noise suppression. Denoise / Natural / Clean and Voice looks.",
     "category": "Audio",
     "aliases": [
       "omavoice",
@@ -54,6 +54,7 @@
         "label": "Preset",
         "options": [
           "podcast",
+          "natural",
           "clean"
         ],
         "defaultValue": "podcast"
@@ -92,7 +93,7 @@
       {
         "key": "podcastEq",
         "type": "enum",
-        "label": "Denoise voice look",
+        "label": "Voice look (Denoise and Natural)",
         "options": [
           "neutral",
           "warm",
@@ -104,7 +105,7 @@
       {
         "key": "podcastEqBodyDb",
         "type": "number",
-        "label": "Denoise body trim (dB)",
+        "label": "Body trim (dB)",
         "min": -6,
         "max": 6,
         "step": 0.5,
@@ -113,7 +114,7 @@
       {
         "key": "podcastEqPresenceDb",
         "type": "number",
-        "label": "Denoise presence trim (dB)",
+        "label": "Presence trim (dB)",
         "min": -6,
         "max": 6,
         "step": 0.5,
@@ -122,7 +123,7 @@
       {
         "key": "podcastEqAirDb",
         "type": "number",
-        "label": "Denoise air trim (dB)",
+        "label": "Air trim (dB)",
         "min": -6,
         "max": 6,
         "step": 0.5,

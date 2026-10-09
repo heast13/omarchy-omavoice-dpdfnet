@@ -18,7 +18,7 @@ dump=0
 runtime_dir="${XDG_RUNTIME_DIR:-/tmp}/omavoice"
 
 usage() {
-  echo "Usage: omavoice-run [--dump] --preset podcast|clean [--quality good|better|best] [--eq neutral|warm|clear|bright] [--eq-body-db N] [--eq-pres-db N] [--eq-air-db N] [--capture-gain-db N] [--output-gain-db N] --target <node.name> --dir <plugin-dir>" >&2
+  echo "Usage: omavoice-run [--dump] --preset podcast|natural|clean [--quality good|better|best] [--eq neutral|warm|clear|bright] [--eq-body-db N] [--eq-pres-db N] [--eq-air-db N] [--capture-gain-db N] [--output-gain-db N] --target <node.name> --dir <plugin-dir>" >&2
   exit 2
 }
 
@@ -46,7 +46,7 @@ done
 
 [[ -n $target && -n $plugin_dir ]] || usage
 [[ $target =~ ^[A-Za-z0-9._:-]+$ ]] || usage
-[[ $preset == podcast || $preset == clean ]] || usage
+[[ $preset == podcast || $preset == natural || $preset == clean ]] || usage
 [[ $quality == good || $quality == better || $quality == best ]] || quality=better
 
 # DPDFNet: the local copy first, else HushMic's system install. The plugin
@@ -81,8 +81,8 @@ db_to_linear() {
 preamp_gain=$(db_to_linear "$capture_gain_db")
 out_gain=$(db_to_linear "$output_gain_db")
 
-# Podcast runs DPDFNet. Without it Podcast keeps high-pass and voice EQ
-# but skips denoise and the compressor.
+# Podcast (Denoise in the UI) runs DPDFNet. Natural is high-pass, voice EQ
+# and dynamics. Without DPDFNet, Podcast falls back to that Natural graph.
 engine="clean"
 if [[ $preset == podcast && -n $dpdfnet ]]; then
   engine="dpdfnet"
@@ -276,7 +276,7 @@ case $quality in
   best) dp_atten=100 ;;
 esac
 
-# Must match Model.eqCurveParams. Podcast always gets hp so Neutral is HPF only.
+# Must match Model.eqCurveParams. Podcast and Natural always get hp so Neutral is HPF only.
 eq_curve=""
 if [[ $preset != clean ]]; then
   eq_curve=$eq_opt
@@ -355,7 +355,7 @@ add_link() {
     prev_out="eq_air:Out"
   fi
 
-  if [[ $engine != clean ]]; then
+  if [[ $preset != clean ]]; then
     dynamics_nodes
     if [[ $have_lsp -eq 1 ]]; then
       add_link "$prev_out" "comp:in"

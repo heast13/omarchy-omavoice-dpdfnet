@@ -25,6 +25,8 @@ test("normalizePreset falls back to podcast, also for the old meeting", () => {
   assert.equal(Model.normalizePreset("meeting"), "podcast")
   assert.equal(Model.normalizePreset("Denoise"), "podcast")
   assert.equal(Model.presetLabel("podcast"), "Denoise")
+  assert.equal(Model.normalizePreset("NATURAL"), "natural")
+  assert.equal(Model.presetLabel("natural"), "Natural")
   assert.equal(Model.normalizePreset("nope"), "podcast")
   assert.equal(Model.normalizePreset(""), "podcast")
 })
@@ -171,6 +173,13 @@ test("Clean ignores voice EQ trim", () => {
   assert.deepEqual(trim, { body: 0, pres: 0, air: 0 })
 })
 
+test("Natural shares the Denoise voice look and trim", () => {
+  const values = { podcastEq: "bright", podcastEqBodyDb: 2 }
+  assert.equal(Model.eqCurveForPreset("natural", values), "bright")
+  assert.deepEqual(Model.eqTrimForPreset("natural", values), Model.eqTrimForPreset("podcast", values))
+  assert.equal(Model.eqCurveForPreset("natural", {}), "clear")
+})
+
 test("eqTrimForPreset reads the podcast schema keys", () => {
   assert.deepEqual(
     Model.eqTrimForPreset("podcast", { meetingEqBodyDb: 4, podcastEqPresenceDb: 2, podcastEqAirDb: -1 }),
@@ -262,6 +271,7 @@ test("setupGuide flags missing DPDFNet only on Podcast", () => {
   assert.match(missing.body, /omavoice\/dpdfnet/)
   assert.equal(Model.setupGuide("podcast", true).needed, false)
   assert.equal(Model.setupGuide("clean", false).needed, false)
+  assert.equal(Model.setupGuide("natural", false).needed, false)
 })
 
 test("hostErrorText is one short sentence", () => {
