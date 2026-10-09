@@ -10,6 +10,11 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [0.7.1] — 2026-10-10
 
+### Added
+
+- **High-pass** switch on the MODE settings, for all modes. Off drops the
+  corner to 10 Hz (DC only), live, without restarting the host.
+
 ### Fixed
 
 - With rtkit installed, the host restarted every second while anything
