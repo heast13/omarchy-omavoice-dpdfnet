@@ -12,6 +12,10 @@ fi
 echo "Installing rtkit (realtime priority for PipeWire and DPDFNet)..."
 sudo pacman -S --needed --noconfirm rtkit
 pacman -Q rtkit >/dev/null 2>&1 || { echo "rtkit did not install." >&2; exit 1; }
+# The desktop portal caches rtkit's limits at start. Started before rtkit,
+# it reports a 0 µs budget, and every PipeWire client that asks it for
+# realtime (pw-loopback, pw-cat, the shell) is SIGKILLed by the kernel.
+systemctl --user try-restart xdg-desktop-portal.service 2>/dev/null || true
 echo
 echo "Done. Omavoice restarts with realtime priority in a few seconds."
-echo "Log out and back in once so PipeWire itself runs realtime too."
+echo "Log out and back in once so PipeWire and the shell run realtime too."

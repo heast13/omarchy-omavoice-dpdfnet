@@ -9,6 +9,7 @@ grep -q "systemctl --user stop 'omavoice-host-\*.service'" "$root/scripts/omavoi
 grep -q 'currentHostKey()' "$root/Service.qml" || fail "a model switch must restart the host through the host key"
 grep -q 'omarchy-launch-floating-terminal-with-presentation' "$root/Service.qml" || fail "rtkit install needs a terminal for sudo"
 [[ -x $root/scripts/omavoice-rtkit ]] || fail "omavoice-rtkit must be executable"
+grep -q 'try-restart xdg-desktop-portal' "$root/scripts/omavoice-rtkit" || fail "rtkit install must restart the portal or clients get a 0 µs budget"
 grep -q 'id: afterPeakMonitor' "$root/Panel.qml" || fail "Panel needs afterPeakMonitor"
 grep -q 'PwNode.name is constant' "$root/Service.qml" || fail "tracker must not bind omavoice while name is empty"
 grep -q 'node.always-process' "$root/scripts/omavoice-run" && fail "always-process destroys the source when capture target is not ready"

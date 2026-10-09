@@ -16,6 +16,9 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   listened (the panel's meter too), and the status flickered between Idle and
   running. rtkit handed the host a 0 µs realtime budget, and the kernel killed
   it on the first busy cycle.
+- Install rtkit restarts the desktop portal. Started before rtkit, it
+  reports a 0 µs realtime budget, and PipeWire clients such as `pw-loopback`
+  were killed a few seconds after audio started.
 
 ### Changed
 
