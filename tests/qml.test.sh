@@ -4,6 +4,9 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 fail() { echo "qml.test: $*" >&2; exit 1; }
 
+grep -q 'currentHostKey()' "$root/Service.qml" || fail "a model switch must restart the host through the host key"
+grep -q 'omarchy-launch-floating-terminal-with-presentation' "$root/Service.qml" || fail "rtkit install needs a terminal for sudo"
+[[ -x $root/scripts/omavoice-rtkit ]] || fail "omavoice-rtkit must be executable"
 grep -q 'id: afterPeakMonitor' "$root/Panel.qml" || fail "Panel needs afterPeakMonitor"
 grep -q 'PwNode.name is constant' "$root/Service.qml" || fail "tracker must not bind omavoice while name is empty"
 grep -q 'node.always-process' "$root/scripts/omavoice-run" && fail "always-process destroys the source when capture target is not ready"
@@ -83,8 +86,8 @@ grep -q 'eq_pres:Gain' "$root/Service.qml" || fail "live controls must write eq_
 grep -q 'eq_air:Gain' "$root/Service.qml" || fail "live controls must write eq_air Gain"
 grep -q 'hp:Freq' "$root/Service.qml" || fail "live controls must write hp Freq"
 grep -q 'preset + "\\0" + targetName + "\\0" + pluginDir' "$root/Service.qml" || fail "hostKey must stay preset+target"
-key_line=$(grep 'var key = preset' "$root/Service.qml" || true)
-[[ -n $key_line ]] || fail "hostKey must build var key from preset"
+key_line=$(grep 'return preset + "\\0" + targetName' "$root/Service.qml" || true)
+[[ -n $key_line ]] || fail "currentHostKey must build the key from preset"
 echo "$key_line" | grep -q 'eq' && fail "host key must not include EQ"
 grep -q 'text: "DISABLED"' "$root/Panel.qml" || fail "Clean Voice must show DISABLED beside the title"
 grep -q 'enabled: service.preset !== "clean"' "$root/Panel.qml" || fail "Voice controls must disable on Clean"

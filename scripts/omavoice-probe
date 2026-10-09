@@ -4,6 +4,7 @@ set -euo pipefail
 
 have_dpdfnet=false
 have_light=false
+have_rtkit=false
 
 # Must match omavoice-run: the local copy, else HushMic's system install.
 dp_local="${XDG_DATA_HOME:-$HOME/.local/share}/omavoice/dpdfnet"
@@ -20,4 +21,10 @@ else
   done
 fi
 
-printf '{"dpdfnet":%s,"light":%s}\n' "$have_dpdfnet" "$have_light"
+# rtkit hands realtime priority to PipeWire and the DPDFNet worker. Without
+# it a busy shell can starve the denoiser on a slow CPU.
+if pacman -Q rtkit >/dev/null 2>&1 || [[ -x /usr/lib/rtkit-daemon ]]; then
+  have_rtkit=true
+fi
+
+printf '{"dpdfnet":%s,"light":%s,"rtkit":%s}\n' "$have_dpdfnet" "$have_light" "$have_rtkit"

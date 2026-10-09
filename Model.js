@@ -3,6 +3,7 @@ var CAPTURE_NAME = "omavoice.capture"
 var NODE_DESCRIPTION = "Omavoice"
 var PRESETS = ["podcast", "natural", "clean"]
 var QUALITIES = ["good", "better", "best"]
+var MODELS = ["auto", "large", "small"]
 var EQ_CURVES = ["neutral", "warm", "clear", "bright"]
 
 // The stored key stays "podcast"; the UI calls that mode Denoise.
@@ -42,6 +43,26 @@ function qualityHint(quality) {
   if (level === "good") return "Light denoise. More of the room stays."
   if (level === "best") return "Heavier denoise. Less air, less noise."
   return "Speech that sounds finished."
+}
+
+function normalizeModel(value) {
+  var model = String(value || "").toLowerCase()
+  if (MODELS.indexOf(model) >= 0) return model
+  return "auto"
+}
+
+function modelLabel(value) {
+  var model = normalizeModel(value)
+  if (model === "large") return "Large"
+  if (model === "small") return "Small"
+  return "Auto"
+}
+
+function modelHint(value) {
+  var model = normalizeModel(value)
+  if (model === "large") return "Always the large model. A busy CPU drops out instead of letting noise through."
+  if (model === "small") return "Always the small model. A third of the CPU, a little less clean."
+  return "Large model, steps down to Small when the CPU is busy."
 }
 
 function isOmavoiceName(name) {
@@ -224,12 +245,14 @@ function hostSwitchReason(prevKey, nextKey, reloading) {
   if (!old[0] || old.length < 3) return "start"
   if (old[0] !== neu[0]) return "preset"
   if (old[1] !== neu[1]) return "target"
+  if (old[3] !== neu[3]) return "model"
   return "start"
 }
 
 function busyStatusText(reason, preset) {
   if (reason === "target") return "Switching microphone…"
   if (reason === "reload") return "Reloading…"
+  if (reason === "model") return "Switching model…"
   return "Starting " + presetLabel(preset) + "…"
 }
 
@@ -499,6 +522,10 @@ if (typeof module !== "undefined") {
     captureGainDbForPreset: captureGainDbForPreset,
     sharedGainPatch: sharedGainPatch,
     dpAttenuation: dpAttenuation,
+    MODELS: MODELS,
+    normalizeModel: normalizeModel,
+    modelLabel: modelLabel,
+    modelHint: modelHint,
     setupGuide: setupGuide,
     hostErrorText: hostErrorText,
     statusText: statusText

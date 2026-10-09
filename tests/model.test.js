@@ -361,3 +361,18 @@ test("hostSwitchReason prefers preset over target", () => {
   assert.equal(Model.hostSwitchReason(prev, next, true), "reload")
   assert.equal(Model.hostSwitchReason("", next, false), "start")
 })
+
+test("hostSwitchReason names a model switch", () => {
+  assert.equal(Model.hostSwitchReason("podcast\0mic\0/dir\0auto", "podcast\0mic\0/dir\0small", false), "model")
+  assert.equal(Model.busyStatusText("model", "podcast"), "Switching model…")
+})
+
+test("normalizeModel keeps Auto, Large and Small", () => {
+  assert.deepEqual(Model.MODELS, ["auto", "large", "small"])
+  assert.equal(Model.normalizeModel("Large"), "large")
+  assert.equal(Model.normalizeModel("small"), "small")
+  assert.equal(Model.normalizeModel("huge"), "auto")
+  assert.equal(Model.normalizeModel(undefined), "auto")
+  assert.equal(Model.modelLabel("small"), "Small")
+  assert.match(Model.modelHint("auto"), /steps down/)
+})

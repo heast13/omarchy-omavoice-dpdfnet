@@ -667,6 +667,48 @@ Panel {
             }
           }
 
+          Column {
+            visible: service.rtkitNeeded === true
+            width: parent.width
+            spacing: Style.space(6)
+
+            Text {
+              width: parent.width
+              text: "Realtime audio is off. On a slow or busy CPU, Denoise can let room noise through. rtkit fixes that and needs your password once."
+              color: root.dim
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.bodySmall
+              wrapMode: Text.WordWrap
+            }
+
+            Item {
+              width: parent.width
+              implicitHeight: Style.space(36)
+
+              MouseArea {
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: service.installRtkit()
+              }
+              Rectangle {
+                anchors.fill: parent
+                radius: Style.cornerRadius
+                color: "transparent"
+                border.width: 1
+                border.color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.18)
+              }
+              Text {
+                anchors.centerIn: parent
+                text: service.rtkitInstalling ? "Waiting for rtkit…" : "Install rtkit"
+                color: root.foreground
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.caption
+                font.bold: true
+              }
+            }
+          }
+
           PanelSeparator { foreground: root.foreground }
 
           Column {
@@ -693,7 +735,7 @@ Panel {
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
                 iconText: "󰒓"
-                tooltipText: "Voice and Strength"
+                tooltipText: "Voice, Strength and Model"
                 foreground: root.foreground
                 fontFamily: root.fontFamily
                 onClicked: root.showTune(true)
@@ -1156,6 +1198,79 @@ Panel {
             opacity: enabled ? 1 : 0.5
             quality: service.quality
             onChosen: function(value) { root.setPodcastQuality(value) }
+          }
+
+          Column {
+            width: parent.width
+            spacing: Style.space(8)
+            enabled: service.preset === "podcast" && service.haveDpdfnet === true
+            opacity: enabled ? 1 : 0.5
+
+            Text {
+              text: "Model"
+              color: root.foreground
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.subtitle
+              font.bold: true
+            }
+
+            Text {
+              width: parent.width
+              text: Model.modelHint(service.dpModel)
+              color: root.dim
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.caption
+              wrapMode: Text.WordWrap
+            }
+
+            Row {
+              width: parent.width
+              spacing: Style.space(6)
+
+              Repeater {
+                model: Model.MODELS
+                Item {
+                  required property string modelData
+                  readonly property bool isCurrent: service.dpModel === modelData
+                  // Small needs its own file; without it the host runs Auto.
+                  readonly property bool usable: modelData !== "small" || service.haveLight === true
+                  width: Math.floor((parent.width - Style.space(6) * 2) / 3)
+                  implicitHeight: Style.space(32)
+                  opacity: usable ? 1 : 0.5
+
+                  MouseArea {
+                    id: modelHit
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    enabled: parent.usable
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: service.setModel(modelData)
+                  }
+                  PanelToolTip {
+                    visible: modelHit.containsMouse
+                    text: Model.modelHint(modelData)
+                    fontFamily: root.fontFamily
+                  }
+                  Rectangle {
+                    anchors.fill: parent
+                    radius: Style.cornerRadius
+                    color: parent.isCurrent
+                      ? (bar ? Style.selectedFillFor(bar.foreground, Color.accent) : Color.accent)
+                      : "transparent"
+                    border.width: 1
+                    border.color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.18)
+                  }
+                  Text {
+                    anchors.centerIn: parent
+                    text: Model.modelLabel(modelData)
+                    color: root.foreground
+                    font.family: root.fontFamily
+                    font.pixelSize: Style.font.caption
+                    font.bold: parent.isCurrent
+                  }
+                }
+              }
+            }
           }
         }
       }

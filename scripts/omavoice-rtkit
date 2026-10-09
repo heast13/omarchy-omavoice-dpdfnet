@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Install rtkit for realtime audio. The panel runs this in a floating
+# terminal so sudo can ask for the password. Omavoice picks it up on its
+# own; PipeWire itself gets realtime after the next login.
+set -euo pipefail
+
+if pacman -Q rtkit >/dev/null 2>&1; then
+  echo "rtkit is already installed."
+  exit 0
+fi
+
+echo "Installing rtkit (realtime priority for PipeWire and DPDFNet)..."
+sudo pacman -S --needed --noconfirm rtkit
+pacman -Q rtkit >/dev/null 2>&1 || { echo "rtkit did not install." >&2; exit 1; }
+echo
+echo "Done. Omavoice restarts with realtime priority in a few seconds."
+echo "Log out and back in once so PipeWire itself runs realtime too."

@@ -15,6 +15,8 @@ Item {
   property bool probed: false
   property bool haveDpdfnet: false
   property bool haveLight: false
+  property bool haveRtkit: true
+  property bool rtkitInstalling: false
   property bool fetching: false
   property string lastError: ""
   property string actionStatus: ""
@@ -84,6 +86,9 @@ Item {
   readonly property bool enabled: setting("enabled", true) !== false
   readonly property string preset: Model.normalizePreset(setting("preset", "podcast"))
   readonly property string quality: Model.normalizeQuality(setting("podcastQuality", "better"))
+  readonly property string dpModel: Model.normalizeModel(setting("dpModel", "auto"))
+  // Realtime only matters for DPDFNet; ask for rtkit there.
+  readonly property bool rtkitNeeded: probed && !haveRtkit && preset === "podcast" && haveDpdfnet
   readonly property string pinnedSource: String(setting("pinnedSource", "") || "")
   readonly property string previousAudioSource: String(setting("previousAudioSource", "") || "")
   readonly property bool setDefaultSource: setting("setDefaultSource", true) !== false
@@ -207,6 +212,12 @@ Item {
     startDebounce.restart()
   }
 
+  // The model lives in the host's env, so a switch restarts the host. Only
+  // Denoise loads DPDFNet; other modes ignore it.
+  function currentHostKey() {
+    return preset + "\0" + targetName + "\0" + pluginDir + "\0" + (preset === "podcast" ? dpModel : "")
+  }
+
   function startHostNow() {
     if (!root.active || !enabled || !targetName) return
     if (!probed) return
@@ -214,7 +225,7 @@ Item {
       if (!lastError) lastError = Model.hostErrorText("bind")
       return
     }
-    var key = preset + "\0" + targetName + "\0" + pluginDir
+    var key = currentHostKey()
     if (hostProcess.running && hostKey === key) return
     busyReason = Model.hostSwitchReason(hostKey, key, reloading)
     if (meterHoldProcess.running) meterHoldProcess.running = false
@@ -224,7 +235,7 @@ Item {
     promoted = false
     hostStartedAt = Date.now()
     hostProcess.running = false
-    var args = [scriptPath("omavoice-run"), "--preset", preset, "--quality", quality, "--capture-gain-db", String(captureGainDb), "--output-gain-db", String(outputGainDb), "--target", targetName, "--dir", pluginDir]
+    var args = [scriptPath("omavoice-run"), "--preset", preset, "--quality", quality, "--model", dpModel, "--capture-gain-db", String(captureGainDb), "--output-gain-db", String(outputGainDb), "--target", targetName, "--dir", pluginDir]
     if (eqCurve) {
       args.push("--eq", eqCurve)
       args.push("--eq-body-db", String(eqTrim.body))
@@ -402,6 +413,19 @@ Item {
     fetchProcess.running = true
   }
 
+  // sudo needs a terminal for the password. Watch the probe until rtkit
+  // shows up, then restart the host so it asks rtkit for realtime.
+  function installRtkit() {
+    rtkitInstalling = true
+    Quickshell.execDetached(["omarchy-launch-floating-terminal-with-presentation", scriptPath("omavoice-rtkit")])
+    rtkitWatch.tries = 0
+    rtkitWatch.restart()
+  }
+
+  function setModel(value) {
+    persist({ dpModel: Model.normalizeModel(value) })
+  }
+
   // Re-scan for DPDFNet and rebuild the chain. Needed after copying its
   // files without restarting the shell.
   function reload() {
@@ -424,6 +448,7 @@ Item {
   }
   onPresetChanged: { busyReason = "preset"; hostAttempts = 0; syncHost() }
   onHaveDpdfnetChanged: { hostKey = ""; syncHost() }
+  onDpModelChanged: { busyReason = "model"; hostAttempts = 0; syncHost() }
   onQualityChanged: applyLiveControls()
   onEqCurveChanged: applyLiveControls()
   onEqBodyDbChanged: applyLiveControls()
@@ -444,8 +469,7 @@ Item {
     if (afterNodeName) {
       lastError = ""
       hostAttempts = 0
-      var key = preset + "\0" + targetName + "\0" + pluginDir
-      if (hostKey === key) {
+      if (hostKey === currentHostKey()) {
         busyReason = ""
         reloading = false
       }
@@ -531,6 +555,13 @@ Item {
           var data = JSON.parse(text)
           haveDpdfnet = data.dpdfnet === true
           haveLight = data.light === true
+          var rtkitBefore = haveRtkit
+          haveRtkit = data.rtkit !== false
+          if (rtkitInstalling && haveRtkit) {
+            rtkitInstalling = false
+            rtkitWatch.stop()
+            if (!rtkitBefore) Qt.callLater(root.reload)
+          }
           lastError = ""
         } catch (e) {
           haveDpdfnet = false
@@ -540,6 +571,23 @@ Item {
         }
         probed = true
       }
+    }
+  }
+
+  Timer {
+    id: rtkitWatch
+    property int tries: 0
+    interval: 3000
+    repeat: true
+    onTriggered: {
+      tries += 1
+      // Five minutes is plenty to type a password; then give up quietly.
+      if (tries > 100) {
+        stop()
+        root.rtkitInstalling = false
+        return
+      }
+      if (!probeProcess.running) root.probe()
     }
   }
 
