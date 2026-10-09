@@ -293,7 +293,10 @@ Item {
     if (hostProcess.running) hostProcess.running = false
     hostKey = ""
     promoted = false
-    if (!enabled) restoreDefault()
+    // Only hand the default back while it still points at Omavoice. Off,
+    // every stream change lands here; a mic the user picked meanwhile must
+    // stay picked and its capture streams must not move.
+    if (!enabled && defaultSourceName === Model.NODE_NAME) restoreDefault()
   }
 
   function setEnabled(on) {
@@ -418,18 +421,15 @@ Item {
   // sudo needs a terminal for the password. Watch the probe until rtkit
   // shows up, then restart the host so it asks rtkit for realtime.
   function installRtkit() {
+    // A second click soon after only queues behind the pacman lock. Later
+    // clicks retry, e.g. after the terminal was closed without installing.
+    if (rtkitInstalling && rtkitWatch.tries < 5) return
     rtkitInstalling = true
-    Quickshell.execDetached(["omarchy-launch-floating-terminal-with-presentation", scriptPath("omavoice-rtkit")])
+    // The launcher joins its args into a bash -c string: quote the path.
+    var path = "'" + scriptPath("omavoice-rtkit").replace(/'/g, "'\\''") + "'"
+    Quickshell.execDetached(["omarchy-launch-floating-terminal-with-presentation", path])
     rtkitWatch.tries = 0
     rtkitWatch.restart()
-  }
-
-  function setHighpass(on) {
-    persist({ highpass: on === true })
-  }
-
-  function setModel(value) {
-    persist({ dpModel: Model.normalizeModel(value) })
   }
 
   // Re-scan for DPDFNet and rebuild the chain. Needed after copying its
@@ -454,7 +454,12 @@ Item {
   }
   onPresetChanged: { busyReason = "preset"; hostAttempts = 0; syncHost() }
   onHaveDpdfnetChanged: { hostKey = ""; syncHost() }
-  onDpModelChanged: { busyReason = "model"; hostAttempts = 0; syncHost() }
+  onDpModelChanged: {
+    // Outside Denoise the key ignores the model and no restart clears this.
+    if (currentHostKey() !== hostKey) busyReason = "model"
+    hostAttempts = 0
+    syncHost()
+  }
   onQualityChanged: applyLiveControls()
   onHighpassChanged: applyLiveControls()
   onEqCurveChanged: applyLiveControls()
@@ -567,18 +572,24 @@ Item {
           if (rtkitInstalling && haveRtkit) {
             rtkitInstalling = false
             rtkitWatch.stop()
-            if (!rtkitBefore) Qt.callLater(root.reload)
+            // pacman lists rtkit before its hooks (user, portal) are done.
+            if (!rtkitBefore) rtkitSettle.restart()
           }
           lastError = ""
         } catch (e) {
-          haveDpdfnet = false
-          haveLight = false
+          // Keep the last answer: a hiccup must not swap the graph twice.
           lastError = Model.hostErrorText("probe")
           root.reloading = false
         }
         probed = true
       }
     }
+  }
+
+  Timer {
+    id: rtkitSettle
+    interval: 5000
+    onTriggered: root.reload()
   }
 
   Timer {

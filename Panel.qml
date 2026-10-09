@@ -1217,7 +1217,7 @@ Panel {
                 anchors.verticalCenter: parent.verticalCenter
                 checked: service.highpass
                 foreground: root.foreground
-                onToggled: service.setHighpass(!service.highpass)
+                onToggled: root.persistSettings({ highpass: !service.highpass })
               }
             }
 
@@ -1283,7 +1283,7 @@ Panel {
                     hoverEnabled: true
                     enabled: parent.usable
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: service.setModel(modelData)
+                    onClicked: root.persistSettings({ dpModel: Model.normalizeModel(modelData) })
                   }
                   PanelToolTip {
                     visible: modelHit.containsMouse

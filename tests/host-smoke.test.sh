@@ -32,7 +32,8 @@ for o in data:
 ')
 [[ -n $target ]] || fail "need a session capture source to load the smoke graph"
 
-"$run" --dump --preset clean --target "$target" --dir "$root" \
+# This test runs pipewire directly, so dump with the direct-host rules.
+OMAVOICE_NO_SYSTEMD=1 "$run" --dump --preset clean --target "$target" --dir "$root" \
   | sed 's/"omavoice/"omavoice.audit/g' >"$tmp"
 grep -q 'node.name = "omavoice.audit"' "$tmp" || fail "smoke conf must rename the published source"
 grep -q "target.object = \"$target\"" "$tmp" || fail "smoke conf must capture a real session source"

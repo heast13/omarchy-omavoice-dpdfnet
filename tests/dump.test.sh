@@ -4,7 +4,6 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 run="$root/scripts/omavoice-run"
 target="alsa_input.usb-TEST_MIC-00.analog-stereo"
-live="${XDG_RUNTIME_DIR:-/tmp}/omavoice/host.conf"
 
 dump() {
   "$run" --dump --preset "$1" --target "$target" --dir "$root" "${@:2}"
@@ -12,20 +11,11 @@ dump() {
 
 fail() { echo "dump.test: $*" >&2; exit 1; }
 
-mkdir -p "$(dirname "$live")"
-backup=""
-if [[ -f $live ]]; then
-  backup=$(mktemp)
-  cp "$live" "$backup"
-fi
-printf 'SENTINEL_LIVE_CONF\n' > "$live"
-dump podcast >/dev/null
-grep -qx 'SENTINEL_LIVE_CONF' "$live" || fail "--dump must not overwrite the live host conf"
-if [[ -n $backup ]]; then
-  mv "$backup" "$live"
-else
-  rm -f "$live"
-fi
+# --dump writes a throwaway conf, never into the live runtime dir.
+rt_dir=$(mktemp -d)
+XDG_RUNTIME_DIR=$rt_dir dump podcast >/dev/null
+[[ -z $(ls -A "$rt_dir") ]] || fail "--dump must not write into XDG_RUNTIME_DIR"
+rmdir "$rt_dir"
 
 have_dp=0
 [[ $("$root/scripts/omavoice-probe") == *'"dpdfnet":true'* ]] && have_dp=1

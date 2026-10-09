@@ -21,6 +21,18 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   listened (the panel's meter too), and the status flickered between Idle and
   running. rtkit handed the host a 0 µs realtime budget, and the kernel killed
   it on the first busy cycle.
+- Turning Omavoice off no longer resets the default mic on every PipeWire
+  stream change. It hands the default back once, while it still points at
+  Omavoice, and leaves a mic you picked afterwards alone. (From upstream.)
+- A Model change outside Denoise no longer leaves "Switching model…" stuck.
+- A stop during host start no longer goes on to start a stale host. The host
+  conf is removed when the host stops.
+- A failed probe keeps the last answer instead of swapping Denoise to the
+  Natural graph and back.
+- Download DPDFNet gives up on a stalled transfer, and keeps the old files if
+  the final move fails.
+- Install rtkit waits a few seconds before restarting Omavoice, and a second
+  click right after does not open another terminal.
 - Install rtkit restarts the desktop portal. Started before rtkit, it
   reports a 0 µs realtime budget, and PipeWire clients such as `pw-loopback`
   were killed a few seconds after audio started.
@@ -30,7 +42,8 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - The host runs as a transient `systemd --user` service with PipeWire's own
   realtime settings. With rtkit, the denoiser now really runs realtime;
   before, it inherited the shell's zero realtime limit. Without systemd it
-  runs directly and stays off rtkit.
+  runs directly and stays off rtkit when the inherited realtime limit is
+  below 50 ms.
 
 ## [0.7.0] — 2026-10-10
 

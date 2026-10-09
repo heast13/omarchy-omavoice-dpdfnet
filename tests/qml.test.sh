@@ -9,6 +9,8 @@ grep -q "systemctl --user stop 'omavoice-host-\*.service'" "$root/scripts/omavoi
 grep -q 'onHighpassChanged: applyLiveControls()' "$root/Service.qml" || fail "the high-pass switch must write live, not restart the host"
 grep -q 'Model.hpFreq(highpass, eqCurve)' "$root/Service.qml" || fail "live controls must write hp:Freq in every mode"
 grep -q '"key": "highpass"' "$root/manifest.json" || fail "manifest must declare the highpass setting"
+grep -q 'if (!enabled && defaultSourceName === Model.NODE_NAME) restoreDefault()' "$root/Service.qml" || fail "off must not reset the default mic on every stream change"
+grep -q "trap 'exit 143' TERM INT" "$root/scripts/omavoice-run" || fail "a TERM must end omavoice-run, not resume it"
 grep -q 'currentHostKey()' "$root/Service.qml" || fail "a model switch must restart the host through the host key"
 grep -q 'omarchy-launch-floating-terminal-with-presentation' "$root/Service.qml" || fail "rtkit install needs a terminal for sudo"
 [[ -x $root/scripts/omavoice-rtkit ]] || fail "omavoice-rtkit must be executable"

@@ -80,6 +80,8 @@ fi
 # passthrough, an overloaded CPU drops out instead. Small without its file
 # runs Auto on the large model.
 dp_model=""
+# Only our choice counts, not a HushMic setup in the shell's env.
+unset HUSHMIC_MODEL_PATH HUSHMIC_FALLBACK_MODEL_PATH HUSHMIC_DSP_TIER
 if [[ -n $dpdfnet ]]; then
   [[ -f ${light:-} ]] || light=""
   [[ $model == small && -z $light ]] && model=auto
@@ -185,7 +187,12 @@ if [[ $use_systemd -eq 1 ]]; then
   rt_hard=$(systemctl --user show -p DefaultLimitRTTIME --value 2>/dev/null || echo infinity)
   [[ $rt_hard == infinity || -z $rt_hard ]] && rt_hard=unlimited
 else
+  # The soft cap is the one the kernel enforces first.
   rt_hard=$(ulimit -HR 2>/dev/null || echo unlimited)
+  rt_soft=$(ulimit -SR 2>/dev/null || echo unlimited)
+  if [[ $rt_soft != unlimited && ( $rt_hard == unlimited || $rt_soft -lt $rt_hard ) ]]; then
+    rt_hard=$rt_soft
+  fi
 fi
 if [[ $rt_hard != unlimited && ! $rt_hard =~ ^[0-9]+$ ]]; then
   rt_hard=0
@@ -563,8 +570,12 @@ stop_host() {
     wait "$launcher_pid" 2>/dev/null || true
     launcher_pid=""
   fi
+  rm -f -- "$conf"
 }
-trap stop_host EXIT TERM INT
+# A TERM must end the script, not resume it: a stop that lands before the
+# host is up would otherwise go on to start a stale host.
+trap stop_host EXIT
+trap 'exit 143' TERM INT
 
 if [[ $use_systemd -eq 1 ]]; then
   # The unit does not inherit our env: hand over what the plugins read.
