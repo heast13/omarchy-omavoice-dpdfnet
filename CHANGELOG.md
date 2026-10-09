@@ -8,6 +8,18 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-10-10
+
+### Added
+
+- **Model** on the MODE settings: Auto / Large / Small. Auto is the plugin's
+  ladder (large, then small, then passthrough under load). Large and Small pin
+  one model, so an overloaded CPU drops out instead of letting room noise
+  through. Small runs at about a third of the CPU. Switching restarts the host.
+- **Install rtkit** in the panel when rtkit is missing on Denoise. It runs
+  `pacman` in a floating terminal for the password, then restarts Omavoice
+  with realtime priority. `scripts/omavoice-rtkit` does the same.
+
 ## [0.6.1] — 2026-10-10
 
 ### Fixed

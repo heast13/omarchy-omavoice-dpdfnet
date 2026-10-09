@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "heast13.omavoice-dpdfnet",
   "name": "Omavoice DPDFNet",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "author": "heast13",
   "license": "MIT",
   "homepage": "https://github.com/heast13/omarchy-omavoice-dpdfnet",
@@ -34,6 +34,7 @@
       "previousAudioSource": "",
       "setDefaultSource": true,
       "podcastQuality": "better",
+      "dpModel": "auto",
       "podcastEq": "clear",
       "podcastEqBodyDb": 0,
       "podcastEqPresenceDb": 0,
@@ -89,6 +90,17 @@
           "best"
         ],
         "defaultValue": "better"
+      },
+      {
+        "key": "dpModel",
+        "type": "enum",
+        "label": "DPDFNet model: Auto, Large, or Small",
+        "options": [
+          "auto",
+          "large",
+          "small"
+        ],
+        "defaultValue": "auto"
       },
       {
         "key": "podcastEq",

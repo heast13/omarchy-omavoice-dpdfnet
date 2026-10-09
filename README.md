@@ -13,12 +13,12 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/omarchy-4%20Quattro-0ea5e9?style=flat-square" alt="Omarchy 4 Quattro">
   <img src="https://img.shields.io/badge/pipewire-filter--chain-a3e635?style=flat-square" alt="PipeWire filter-chain">
-  <img src="https://img.shields.io/badge/version-0.6.1-111827?style=flat-square" alt="Version 0.6.1">
+  <img src="https://img.shields.io/badge/version-0.7.0-111827?style=flat-square" alt="Version 0.7.0">
 </p>
 
 <p align="center">
   <img src="preview.png" alt="Omavoice DPDFNet panel: Denoise, Natural and Clean, selected mic with live level" width="380">
-  <img src="docs/preview-tune.png" alt="Mode settings: Voice looks, Body / Presence / Air, Strength" width="380">
+  <img src="docs/preview-tune.png" alt="Mode settings: Voice looks, Body / Presence / Air, Strength, Model" width="380">
 </p>
 
 A fork of [Omavoice](https://github.com/gigasolo/omavoice) by GigaSolo for [Omarchy](https://omarchy.org/) 4 (Quattro). It swaps RNNoise and DeepFilterNet for **DPDFNet**, which cleaned speech best in a side-by-side test, and drops the rest: no Meeting preset, no echo cancel, no engine picker.
@@ -39,7 +39,7 @@ Not affiliated with or endorsed by GigaSolo, Ceva, or 37signals.
 
 Natural uses the same Voice look as Denoise, so you tune your voice once.
 
-Right-click the mark to toggle. Open the panel to switch the mode and pick a microphone. The selected mic row shows a live level and a hairline of what Omavoice is sending. Other rows stay quiet so a Bluetooth headset is not grabbed. The settings on MODE set a Voice look (Neutral / Warm / Clear / Bright) with Body / Presence / Air knobs, and the Strength of the denoise. Strength only applies to Denoise; on Clean, Voice is disabled too.
+Right-click the mark to toggle. Open the panel to switch the mode and pick a microphone. The selected mic row shows a live level and a hairline of what Omavoice is sending. Other rows stay quiet so a Bluetooth headset is not grabbed. The settings on MODE set a Voice look (Neutral / Warm / Clear / Bright) with Body / Presence / Air knobs, the Strength of the denoise, and the DPDFNet Model. Strength and Model only apply to Denoise; on Clean, Voice is disabled too.
 
 In the app itself, choose **Omavoice** as the microphone and turn *its* noise cancellation off. Two denoisers stacked sound hollow.
 
@@ -76,16 +76,25 @@ Copy all of them from the same release if you fill the folder by hand. Without D
 
 Softer / Balanced / Stronger cap the suppression at 24 / 48 / 100 dB. DPDFNet adds about 40 ms of latency.
 
-When the CPU cannot keep up, the plugin steps down from the full model to the light one, and only then to unfiltered audio. Without `dpdfnet2_48khz_hr.onnx` it skips the light step, so a slow laptop lets room noise through, sometimes for minutes. The panel asks you to download again if the light model is missing.
+Model picks the DPDFNet network:
 
-On slow machines, also install `rtkit` (`sudo pacman -S rtkit`, then log out and back in). PipeWire and DPDFNet then run with realtime priority, and a busy shell no longer starves the denoiser.
+| Model | What it does |
+| --- | --- |
+| **Auto** (default) | Large model. When the CPU cannot keep up, it steps down to Small, and only then to unfiltered audio. |
+| **Large** | Always the large model. A CPU that cannot keep up drops out instead of letting noise through. |
+| **Small** | Always the small model, about a third of the CPU. A little less clean. Good for old dual-cores. |
+
+Without `dpdfnet2_48khz_hr.onnx`, Auto skips the Small step, so a slow laptop lets room noise through, sometimes for minutes. The panel asks you to download again if the small model is missing.
+
+On slow machines, also install `rtkit`. PipeWire and DPDFNet then run with realtime priority, and a busy shell no longer starves the denoiser. If it is missing, Denoise shows **Install rtkit**: it opens a terminal for your password, and Omavoice restarts with realtime once rtkit is there. Log out and back in once so PipeWire itself runs realtime too.
 
 ## Use
 
 | Action | How |
 | --- | --- |
 | Open or close the panel | Left-click the mark |
-| Tune Denoise | Settings on MODE: Voice look, then Softer / Balanced / Stronger |
+| Tune Denoise | Settings on MODE: Voice look, Softer / Balanced / Stronger, Auto / Large / Small |
+| Realtime audio | **Install rtkit** in the panel, when rtkit is missing |
 | Automatic microphone | AUTOMATIC on the MICROPHONE header |
 | Toggle Omavoice | Right-click, or `o` |
 | Download DPDFNet | The button under **DPDFNet missing**, or `i` |
