@@ -20,7 +20,7 @@ dump=0
 runtime_dir="${XDG_RUNTIME_DIR:-/tmp}/omavoice"
 
 usage() {
-  echo "Usage: omavoice-run [--dump] --preset podcast|natural|clean [--quality good|better|best] [--model auto|large|small] [--highpass on|off] [--eq neutral|warm|clear|bright] [--eq-body-db N] [--eq-pres-db N] [--eq-air-db N] [--capture-gain-db N] [--output-gain-db N] --target <node.name> --dir <plugin-dir>" >&2
+  echo "Usage: omavoice-run [--dump] --preset podcast|natural|clean [--quality good|better|best] [--model auto|large|small] [--highpass on|off] [--eq neutral|warm|clear|bright|custom] [--eq-body-db N] [--eq-pres-db N] [--eq-air-db N] [--capture-gain-db N] [--output-gain-db N] --target <node.name> --dir <plugin-dir>" >&2
   exit 2
 }
 
@@ -356,7 +356,8 @@ if [[ $preset != clean ]]; then
     presence) eq_curve=clear ;;
     air) eq_curve=bright ;;
   esac
-  if [[ $eq_curve != neutral && $eq_curve != warm && $eq_curve != clear && $eq_curve != bright ]]; then
+  # Custom is flat like Neutral; its sound comes from the trims.
+  if [[ $eq_curve != neutral && $eq_curve != warm && $eq_curve != clear && $eq_curve != bright && $eq_curve != custom ]]; then
     eq_curve=clear
   fi
 fi

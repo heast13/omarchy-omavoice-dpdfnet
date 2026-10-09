@@ -386,3 +386,22 @@ test("hpFreq follows the look, off is a 10 Hz corner", () => {
   assert.match(Model.hpHint(true, "bright"), /100 Hz/)
   assert.match(Model.hpHint(false, "clear"), /^Off/)
 })
+
+test("Custom keeps its own trims apart from the named looks", () => {
+  assert.ok(Model.EQ_CURVES.includes("custom"))
+  assert.equal(Model.normalizeEqCurve("custom"), "custom")
+  assert.deepEqual(Model.eqCurveParams("custom"), { hpHz: 80, body: 0, pres: 0, air: 0 })
+  assert.equal(Model.eqTrimKey("custom", "body"), "customEqBodyDb")
+  assert.equal(Model.eqTrimKey("custom", "pres"), "customEqPresenceDb")
+  assert.equal(Model.eqTrimKey("warm", "air"), "podcastEqAirDb")
+  const values = {
+    podcastEq: "custom",
+    podcastEqBodyDb: 1, podcastEqPresenceDb: 1, podcastEqAirDb: 1,
+    customEqBodyDb: 4, customEqPresenceDb: -2.5, customEqAirDb: 9
+  }
+  assert.deepEqual(Model.eqTrimForPreset("podcast", values), { body: 4, pres: -2.5, air: 6 })
+  assert.deepEqual(Model.eqTrimForPreset("natural", { ...values, podcastEq: "warm" }), { body: 1, pres: 1, air: 1 })
+  assert.deepEqual(Model.eqTrimForPreset("clean", values), { body: 0, pres: 0, air: 0 })
+  assert.deepEqual(Model.eqBandGains("custom", { body: 4, pres: -2.5, air: 6 }), { hpHz: 80, body: 4, pres: -2.5, air: 6 })
+  assert.match(Model.eqCurveHint("custom"), /Kept/)
+})

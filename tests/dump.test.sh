@@ -221,4 +221,10 @@ done
 [[ $(hp_line clean --highpass bogus) == *'"Freq" = 80.0'* ]] \
   || fail "an unknown --highpass must stay on"
 
+custom_conf=$(dump podcast --eq custom --eq-body-db 3 --eq-pres-db -1.5 --eq-air-db 2)
+grep -A5 'name = eq_body' <<<"$custom_conf" | grep -q '"Gain" = 3.0' || fail "Custom body must be the trim alone"
+grep -A5 'name = eq_pres' <<<"$custom_conf" | grep -q '"Gain" = -1.5' || fail "Custom presence must be the trim alone"
+grep -A5 'name = eq_air' <<<"$custom_conf" | grep -q '"Gain" = 2.0' || fail "Custom air must be the trim alone"
+grep -A4 'name = hp' <<<"$custom_conf" | grep -q '"Freq" = 80.0' || fail "Custom keeps the 80 Hz high-pass"
+
 echo "dump.test: ok"

@@ -40,6 +40,9 @@
       "podcastEqBodyDb": 0,
       "podcastEqPresenceDb": 0,
       "podcastEqAirDb": 0,
+      "customEqBodyDb": 0,
+      "customEqPresenceDb": 0,
+      "customEqAirDb": 0,
       "outputGainDb": 0,
       "captureGainDb": 0
     },
@@ -117,7 +120,8 @@
           "neutral",
           "warm",
           "clear",
-          "bright"
+          "bright",
+          "custom"
         ],
         "defaultValue": "clear"
       },
@@ -143,6 +147,33 @@
         "key": "podcastEqAirDb",
         "type": "number",
         "label": "Air trim (dB)",
+        "min": -6,
+        "max": 6,
+        "step": 0.5,
+        "defaultValue": 0
+      },
+      {
+        "key": "customEqBodyDb",
+        "type": "number",
+        "label": "Custom look: Body (dB)",
+        "min": -6,
+        "max": 6,
+        "step": 0.5,
+        "defaultValue": 0
+      },
+      {
+        "key": "customEqPresenceDb",
+        "type": "number",
+        "label": "Custom look: Presence (dB)",
+        "min": -6,
+        "max": 6,
+        "step": 0.5,
+        "defaultValue": 0
+      },
+      {
+        "key": "customEqAirDb",
+        "type": "number",
+        "label": "Custom look: Air (dB)",
         "min": -6,
         "max": 6,
         "step": 0.5,

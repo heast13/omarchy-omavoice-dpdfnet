@@ -7,7 +7,7 @@ var MODELS = ["auto", "large", "small"]
 // High-pass "off" is a 10 Hz corner, not a missing node, so the switch
 // writes live without a host restart. Must match omavoice-run.
 var HP_OFF_HZ = 10
-var EQ_CURVES = ["neutral", "warm", "clear", "bright"]
+var EQ_CURVES = ["neutral", "warm", "clear", "bright", "custom"]
 
 // The stored key stays "podcast"; the UI calls that mode Denoise.
 function normalizePreset(value) {
@@ -309,7 +309,17 @@ function eqCurveParams(curve) {
   if (c === "warm") return { hpHz: 80, body: 2.0, pres: -1.5, air: 0 }
   if (c === "clear") return { hpHz: 80, body: -2.5, pres: 2.0, air: 0 }
   if (c === "bright") return { hpHz: 100, body: 0, pres: 1.0, air: 2.5 }
+  // Neutral and Custom: Custom starts flat and lives on its own trims.
   return { hpHz: 80, body: 0, pres: 0, air: 0 }
+}
+
+// Custom keeps its own three values, so a trip to another look and back
+// finds them unchanged. Named looks share the podcastEq trims and reset them.
+function eqTrimKey(curve, band) {
+  var prefix = normalizeEqCurve(curve, "neutral") === "custom" ? "customEq" : "podcastEq"
+  if (band === "pres") return prefix + "PresenceDb"
+  if (band === "air") return prefix + "AirDb"
+  return prefix + "BodyDb"
 }
 
 function eqCurveForPreset(preset, values) {
@@ -320,10 +330,11 @@ function eqCurveForPreset(preset, values) {
 function eqTrimForPreset(preset, values) {
   var src = values || {}
   if (normalizePreset(preset) === "clean") return { body: 0, pres: 0, air: 0 }
+  var curve = eqCurveForPreset(preset, src)
   return {
-    body: clampEqTrimDb(src.podcastEqBodyDb),
-    pres: clampEqTrimDb(src.podcastEqPresenceDb),
-    air: clampEqTrimDb(src.podcastEqAirDb)
+    body: clampEqTrimDb(src[eqTrimKey(curve, "body")]),
+    pres: clampEqTrimDb(src[eqTrimKey(curve, "pres")]),
+    air: clampEqTrimDb(src[eqTrimKey(curve, "air")])
   }
 }
 
@@ -382,6 +393,7 @@ function eqCurveHint(value) {
   if (c === "warm") return "A little low end. Less edge."
   if (c === "clear") return "Cut the box. Speech a bit forward."
   if (c === "bright") return "Higher high-pass and a gentle top."
+  if (c === "custom") return "Your own Body, Presence and Air. Kept when you switch looks."
   return "High-pass only. No color."
 }
 
@@ -525,6 +537,7 @@ if (typeof module !== "undefined") {
     eqCurveParams: eqCurveParams,
     eqCurveForPreset: eqCurveForPreset,
     eqTrimForPreset: eqTrimForPreset,
+    eqTrimKey: eqTrimKey,
     eqBandGains: eqBandGains,
     eqBandBase: eqBandBase,
     eqBandRange: eqBandRange,

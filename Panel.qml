@@ -147,12 +147,14 @@ Panel {
 
   function setEqCurve(value) {
     if (service.preset === "clean") return
-    var prefix = "podcastEq"
-    var patch = {}
-    patch[prefix] = Model.normalizeEqCurve(value, "neutral")
-    patch[prefix + "BodyDb"] = 0
-    patch[prefix + "PresenceDb"] = 0
-    patch[prefix + "AirDb"] = 0
+    var curve = Model.normalizeEqCurve(value, "neutral")
+    var patch = { podcastEq: curve }
+    // Named looks start from their own curve; Custom keeps what you set.
+    if (curve !== "custom") {
+      patch.podcastEqBodyDb = 0
+      patch.podcastEqPresenceDb = 0
+      patch.podcastEqAirDb = 0
+    }
     persistSettings(patch)
     if (service && typeof service.clearEqPreview === "function") service.clearEqPreview()
     if (service && typeof service.applyLiveControls === "function") service.applyLiveControls()
@@ -165,12 +167,8 @@ Panel {
   function setEqTrimDb(band, value) {
     if (service.preset === "clean") return
     var trim = Model.snapEqTrimDb(Model.snapEqBandDb(service.eqCurve || "neutral", band, value) - eqCurveBase(band))
-    var prefix = "podcastEq"
-    var key = prefix + "BodyDb"
-    if (band === "pres") key = prefix + "PresenceDb"
-    else if (band === "air") key = prefix + "AirDb"
     var patch = {}
-    patch[key] = trim
+    patch[Model.eqTrimKey(service.eqCurve || "neutral", band)] = trim
     persistSettings(patch)
     if (service && typeof service.clearEqPreview === "function") service.clearEqPreview()
     if (service && typeof service.applyLiveControls === "function") service.applyLiveControls()
@@ -1115,12 +1113,13 @@ Panel {
                     { value: "neutral", label: "Neutral" },
                     { value: "warm", label: "Warm" },
                     { value: "clear", label: "Clear" },
-                    { value: "bright", label: "Bright" }
+                    { value: "bright", label: "Bright" },
+                    { value: "custom", label: "Custom" }
                   ]
                   CursorSurface {
                     required property var modelData
                     required property int index
-                    width: Math.floor((parent.width - Style.space(6) * 3) / 4)
+                    width: Math.floor((parent.width - Style.space(6) * 4) / 5)
                     implicitHeight: Style.space(32)
                     hasCursor: service.preset !== "clean" && root.cursorActive && root.focusSection === "voice" && root.eqIndex === index
                     foreground: root.foreground
