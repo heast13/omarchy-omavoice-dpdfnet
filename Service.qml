@@ -14,6 +14,7 @@ Item {
 
   property bool probed: false
   property bool haveDpdfnet: false
+  property bool haveLight: false
   property bool fetching: false
   property string lastError: ""
   property string actionStatus: ""
@@ -87,7 +88,7 @@ Item {
   readonly property string previousAudioSource: String(setting("previousAudioSource", "") || "")
   readonly property bool setDefaultSource: setting("setDefaultSource", true) !== false
   // Not "missing" before the first probe answers.
-  readonly property var setup: Model.setupGuide(preset, haveDpdfnet || !probed)
+  readonly property var setup: Model.setupGuide(preset, haveDpdfnet || !probed, haveLight || !probed)
   readonly property bool setupNeeded: setup.needed
   readonly property real outputGainDb: Model.outputGainDbForPreset(preset, settings)
   readonly property real captureGainDb: Model.captureGainDbForPreset(preset, settings)
@@ -529,9 +530,11 @@ Item {
         try {
           var data = JSON.parse(text)
           haveDpdfnet = data.dpdfnet === true
+          haveLight = data.light === true
           lastError = ""
         } catch (e) {
           haveDpdfnet = false
+          haveLight = false
           lastError = Model.hostErrorText("probe")
           root.reloading = false
         }

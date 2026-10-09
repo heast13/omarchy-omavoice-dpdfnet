@@ -38,14 +38,19 @@ touch "$fake/full/omavoice/dpdfnet/"{libdpdfnet_ladspa.so,dpdfnet8_48khz_hr.onnx
 full_conf="$(XDG_DATA_HOME=$fake/full dump podcast)"
 echo "$full_conf" | grep -q "plugin = \"$fake/full/omavoice/dpdfnet/libdpdfnet_ladspa.so\"" \
   || fail "a complete local copy must load DPDFNet from XDG_DATA_HOME"
-[[ $(XDG_DATA_HOME=$fake/full "$root/scripts/omavoice-probe") == '{"dpdfnet":true}' ]] \
-  || fail "probe must see a complete local copy"
+[[ $(XDG_DATA_HOME=$fake/full "$root/scripts/omavoice-probe") == '{"dpdfnet":true,"light":false}' ]] \
+  || fail "probe must see a complete local copy and report the missing light model"
+touch "$fake/full/omavoice/dpdfnet/dpdfnet2_48khz_hr.onnx"
+[[ $(XDG_DATA_HOME=$fake/full "$root/scripts/omavoice-probe") == '{"dpdfnet":true,"light":true}' ]] \
+  || fail "probe must see the light model"
+grep -q 'HUSHMIC_FALLBACK_MODEL_PATH=\$light' "$run" \
+  || fail "omavoice-run must hand the light model to DPDFNet"
 if [[ ! -f /usr/lib/ladspa/libdpdfnet_ladspa.so && ! -f /usr/lib64/ladspa/libdpdfnet_ladspa.so ]]; then
   empty_conf="$(XDG_DATA_HOME=$fake/empty dump podcast)"
   echo "$empty_conf" | grep -q 'dpdfnet' && fail "podcast without DPDFNet must not load it"
   [[ $empty_conf == "$(dump natural)" ]] || fail "podcast without DPDFNet must fall back to the Natural graph"
   echo "$empty_conf" | grep -q 'name = eq_body' || fail "podcast without DPDFNet keeps voice EQ"
-  [[ $(XDG_DATA_HOME=$fake/empty "$root/scripts/omavoice-probe") == '{"dpdfnet":false}' ]] \
+  [[ $(XDG_DATA_HOME=$fake/empty "$root/scripts/omavoice-probe") == '{"dpdfnet":false,"light":false}' ]] \
     || fail "probe must report missing DPDFNet like omavoice-run"
 fi
 

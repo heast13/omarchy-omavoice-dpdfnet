@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Download DPDFNet from a pinned HushMic release into the local folder that
 # omavoice-run and omavoice-probe check first. No root, no HushMic app.
-# Only the four files the chain loads are kept; the rest of the tarball goes.
+# Only the files the chain loads are kept; the rest of the tarball goes.
 set -euo pipefail
 
 # Bump all three together. The checksum is HushMic's own sha256sums.txt entry.
@@ -34,6 +34,8 @@ tar -xzf "$work/hushmic.tar.gz" -C "$work" --wildcards \
   "$top/lib/hushmic/libonnxruntime.so*" \
   "$top/share/hushmic/models/dpdfnet8_48khz_hr.onnx" \
   "$top/share/hushmic/models/dpdfnet8_48khz_hr.weights.f32" \
+  "$top/share/hushmic/models/dpdfnet2_48khz_hr.onnx" \
+  "$top/share/hushmic/models/dpdfnet2_48khz_hr.weights.f32" \
   || fail "The HushMic release is missing DPDFNet files."
 
 # libonnxruntime.so is a soname symlink chain; keep only the real file.
@@ -47,6 +49,10 @@ install -m644 "$src/lib/ladspa/libdpdfnet_ladspa.so" "$stage/"
 install -m644 "$ort" "$stage/libonnxruntime.so"
 install -m644 "$src/share/hushmic/models/dpdfnet8_48khz_hr.onnx" "$stage/"
 install -m644 "$src/share/hushmic/models/dpdfnet8_48khz_hr.weights.f32" "$stage/"
+# The light model is the plugin's fallback when the CPU cannot keep up.
+# Without it the plugin drops straight to unfiltered passthrough.
+install -m644 "$src/share/hushmic/models/dpdfnet2_48khz_hr.onnx" "$stage/"
+install -m644 "$src/share/hushmic/models/dpdfnet2_48khz_hr.weights.f32" "$stage/"
 printf '%s\n' "$version" > "$stage/VERSION"
 
 # Swap in place. A running host keeps the old files open until reload.

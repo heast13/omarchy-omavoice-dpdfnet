@@ -13,7 +13,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/omarchy-4%20Quattro-0ea5e9?style=flat-square" alt="Omarchy 4 Quattro">
   <img src="https://img.shields.io/badge/pipewire-filter--chain-a3e635?style=flat-square" alt="PipeWire filter-chain">
-  <img src="https://img.shields.io/badge/version-0.6.0-111827?style=flat-square" alt="Version 0.6.0">
+  <img src="https://img.shields.io/badge/version-0.6.1-111827?style=flat-square" alt="Version 0.6.1">
 </p>
 
 <p align="center">
@@ -51,7 +51,7 @@ omarchy plugin add https://github.com/heast13/omarchy-omavoice-dpdfnet.git --ena
 
 Open the panel. It says **DPDFNet missing**. Click **Download DPDFNet** (or press `i`). That is it.
 
-DPDFNet comes from [HushMic](https://github.com/Fovty/hushmic), which ships it as a LADSPA plugin. The button downloads one pinned HushMic release from GitHub (62 MB, once), checks its sha256, and keeps only the four files Omavoice loads (53 MB) in `~/.local/share/omavoice/dpdfnet/`. No root, no AUR package, no HushMic app. From a terminal it is `scripts/omavoice-fetch` in the plugin folder.
+DPDFNet comes from [HushMic](https://github.com/Fovty/hushmic), which ships it as a LADSPA plugin. The button downloads one pinned HushMic release from GitHub (62 MB, once), checks its sha256, and keeps only the files Omavoice loads (73 MB) in `~/.local/share/omavoice/dpdfnet/`. No root, no AUR package, no HushMic app. From a terminal it is `scripts/omavoice-fetch` in the plugin folder.
 
 > [!IMPORTANT]
 > This fork replaces upstream Omavoice. Both publish a PipeWire source called `omavoice`, so never enable them together. Remove `gigasolo.omavoice` first.
@@ -67,12 +67,18 @@ If you already use `hushmic-bin`, Omavoice finds it on its own. It looks in `~/.
 libdpdfnet_ladspa.so            # /usr/lib/ladspa/
 dpdfnet8_48khz_hr.onnx          # /usr/share/hushmic/models/
 dpdfnet8_48khz_hr.weights.f32   # /usr/share/hushmic/models/ (optional: faster native engine)
+dpdfnet2_48khz_hr.onnx          # /usr/share/hushmic/models/ (light fallback, see below)
+dpdfnet2_48khz_hr.weights.f32   # /usr/share/hushmic/models/ (optional: faster native engine)
 libonnxruntime.so               # /usr/lib/hushmic/libonnxruntime.so.1.*, renamed
 ```
 
 Copy all of them from the same release if you fill the folder by hand. Without DPDFNet, Denoise falls back to the Natural chain, and the panel says **DPDFNet missing**. Click **reload** after installing or copying.
 
 Softer / Balanced / Stronger cap the suppression at 24 / 48 / 100 dB. DPDFNet adds about 40 ms of latency.
+
+When the CPU cannot keep up, the plugin steps down from the full model to the light one, and only then to unfiltered audio. Without `dpdfnet2_48khz_hr.onnx` it skips the light step, so a slow laptop lets room noise through, sometimes for minutes. The panel asks you to download again if the light model is missing.
+
+On slow machines, also install `rtkit` (`sudo pacman -S rtkit`, then log out and back in). PipeWire and DPDFNet then run with realtime priority, and a busy shell no longer starves the denoiser.
 
 ## Use
 

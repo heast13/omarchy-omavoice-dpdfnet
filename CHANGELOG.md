@@ -8,6 +8,17 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+## [0.6.1] — 2026-10-10
+
+### Fixed
+
+- Denoise let room noise through on slow CPUs, after a click in the panel or
+  any short load, for up to an hour. DPDFNet steps down to a light model under
+  load, but Omavoice never gave it one, so it dropped straight to unfiltered
+  audio and often could not climb back. The download now keeps the light model
+  `dpdfnet2_48khz_hr` too, and `omavoice-run` hands it to the plugin.
+- The panel asks to download again when the light model is missing.
+
 ## [0.6.0] — 2026-10-09
 
 ### Added

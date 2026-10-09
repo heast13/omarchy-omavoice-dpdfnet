@@ -403,14 +403,25 @@ function dpAttenuation(quality) {
   return 48
 }
 
-function setupGuide(preset, haveDpdfnet) {
+function setupGuide(preset, haveDpdfnet, haveLight) {
   // Only Denoise runs DPDFNet.
-  if (normalizePreset(preset) !== "podcast" || haveDpdfnet) return { needed: false, hero: "", body: "" }
-  return {
-    needed: true,
-    hero: "DPDFNet missing",
-    body: "Download it once from the HushMic release (62 MB, no root), or install hushmic-bin from the AUR and reload."
+  if (normalizePreset(preset) !== "podcast") return { needed: false, hero: "", body: "" }
+  if (!haveDpdfnet) {
+    return {
+      needed: true,
+      hero: "DPDFNet missing",
+      body: "Download it once from the HushMic release (62 MB, no root), or install hushmic-bin from the AUR and reload."
+    }
   }
+  // Older downloads lack the light model: a busy CPU then passes raw room noise.
+  if (haveLight === false) {
+    return {
+      needed: true,
+      hero: "DPDFNet light model missing",
+      body: "Without it, a busy CPU lets room noise through. Download again once (62 MB, no root)."
+    }
+  }
+  return { needed: false, hero: "", body: "" }
 }
 
 function hostErrorText(kind, raw) {

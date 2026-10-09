@@ -274,6 +274,16 @@ test("setupGuide flags missing DPDFNet only on Podcast", () => {
   assert.equal(Model.setupGuide("natural", false).needed, false)
 })
 
+test("setupGuide asks for the light model DPDFNet falls back to", () => {
+  const light = Model.setupGuide("podcast", true, false)
+  assert.equal(light.needed, true)
+  assert.match(light.hero, /light model/)
+  assert.match(light.body, /Download/)
+  assert.equal(Model.setupGuide("podcast", true, true).needed, false)
+  assert.equal(Model.setupGuide("podcast", false, false).hero, "DPDFNet missing")
+  assert.equal(Model.setupGuide("natural", true, false).needed, false)
+})
+
 test("hostErrorText is one short sentence", () => {
   assert.equal(Model.hostErrorText("bind"), "Could not start the microphone.")
   assert.equal(Model.hostErrorText("probe"), "Could not check audio plugins.")

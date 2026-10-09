@@ -57,13 +57,20 @@ if [[ -f $dp_local/libdpdfnet_ladspa.so && -f $dp_local/dpdfnet8_48khz_hr.onnx &
   dpdfnet=$dp_local/libdpdfnet_ladspa.so
   export HUSHMIC_MODEL_PATH=$dp_local/dpdfnet8_48khz_hr.onnx
   export ORT_DYLIB_PATH=$dp_local/libonnxruntime.so
+  light=$dp_local/dpdfnet2_48khz_hr.onnx
 else
   for candidate in /usr/lib/ladspa/libdpdfnet_ladspa.so /usr/lib64/ladspa/libdpdfnet_ladspa.so; do
     if [[ -f $candidate && -f /usr/share/hushmic/models/dpdfnet8_48khz_hr.onnx ]]; then
       dpdfnet=$candidate
+      light=/usr/share/hushmic/models/dpdfnet2_48khz_hr.onnx
       break
     fi
   done
+fi
+# The light model is the step between full DPDFNet and raw passthrough when
+# the CPU cannot keep up. Without it a busy dual-core passes room noise.
+if [[ -n $dpdfnet && -f ${light:-} ]]; then
+  export HUSHMIC_FALLBACK_MODEL_PATH=$light
 fi
 
 have_lsp=0
