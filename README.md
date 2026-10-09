@@ -17,7 +17,7 @@
 </p>
 
 > [!NOTE]
-> Local build (`0.3.2-dpdfnet.2`): Meeting, echo cancel, RNNoise, DeepFilterNet and the engine picker are removed. Enhanced always runs DPDFNet. The screenshots still show the upstream 0.3.2 panel.
+> Local build (`0.3.2-dpdfnet.2`): Meeting, echo cancel, RNNoise, DeepFilterNet and the engine picker are removed. Denoise always runs DPDFNet. The screenshots still show the upstream 0.3.2 panel.
 
 Pick **Omavoice** in OBS, a browser, or a call app. The plugin sits under those apps as a PipeWire source, so you do not configure each one. USB mics attach themselves when you plug them in.
 
@@ -27,13 +27,13 @@ An independent [MIT](LICENSE)-licensed plugin by [GigaSolo](https://github.com/g
 
 ## Modes
 
-| | Enhanced | Clean |
+| | Denoise | Clean |
 | --- | --- | --- |
 | **For** | Calls, OBS, interviews, local record | Program mixes, music beds |
 | **Does** | High-pass + DPDFNet + voice EQ + compressor | High-pass only |
 | **Keeps** | Speech that sounds finished | Applause, keys, and music |
 
-Right-click the mark to toggle. Open the panel to switch the mode and pick a microphone. The selected mic row shows a live level and a hairline of what Omavoice is sending. Other rows stay quiet so a Bluetooth headset is not grabbed. MODE settings set a Voice look (Neutral / Warm / Clear / Bright) with Body / Presence / Air knobs, and the Denoise strength. On Clean, Voice is visible and disabled.
+Right-click the mark to toggle. Open the panel to switch the mode and pick a microphone. The selected mic row shows a live level and a hairline of what Omavoice is sending. Other rows stay quiet so a Bluetooth headset is not grabbed. MODE settings set a Voice look (Neutral / Warm / Clear / Bright) with Body / Presence / Air knobs, and the Strength of the denoise. On Clean, Voice is visible and disabled.
 
 In the app itself, choose **Omavoice** as the microphone and turn *its* noise cancellation off. Two denoisers stacked sound hollow.
 
@@ -48,7 +48,7 @@ dpdfnet8_48khz_hr.weights.f32   # optional: faster native engine
 libonnxruntime.so               # ONNX Runtime the plugin was built against
 ```
 
-If that folder is incomplete, Omavoice falls back to a system install of `hushmic-bin`. Without either, Enhanced skips denoise and the compressor (high-pass and voice EQ stay) and the panel says **DPDFNet missing**. Copy the files, then click **reload**.
+If that folder is incomplete, Omavoice falls back to a system install of `hushmic-bin`. Without either, the Denoise mode skips noise suppression and the compressor (high-pass and voice EQ stay) and the panel says **DPDFNet missing**. Copy the files, then click **reload**.
 
 Softer / Balanced / Stronger cap the suppression at 24 / 48 / 100 dB. DPDFNet adds about 40 ms of latency.
 
@@ -70,11 +70,11 @@ Do not symlink the checkout into `~/.config/omarchy/plugins` — Omarchy refuses
 | Action | How |
 | --- | --- |
 | Open or close the panel | Left-click the mark |
-| Tune Enhanced | Settings on MODE: Voice look, then Softer / Balanced / Stronger |
+| Tune Denoise | Settings on MODE: Voice look, then Softer / Balanced / Stronger |
 | Automatic microphone | AUTOMATIC on the MICROPHONE header |
 | Toggle Omavoice | Right-click, or `o` |
 | Reload processing | Reload next to on/off, or `r` |
-| Enhanced / Clean | `e` / `c` |
+| Denoise / Clean | `d` / `c` |
 | Move | Arrow keys or `h` `j` `k` `l` |
 | Activate | Enter |
 | Close | Escape |
@@ -88,7 +88,7 @@ USB / laptop / BT mic
         │
         ▼
   Omavoice  (pipewire -c, its own client)
-   Enhanced · Clean
+   Denoise · Clean
         │
         ▼
   OBS · browser · call app

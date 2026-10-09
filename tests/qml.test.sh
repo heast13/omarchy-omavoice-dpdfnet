@@ -96,7 +96,7 @@ grep -q 'title: "Presence"' "$root/Panel.qml" || fail "Presence slider must stay
 grep -q 'title: "Air"' "$root/Panel.qml" || fail "Air slider must stay"
 grep -q '"clear"' "$root/manifest.json" || fail "schema looks must include clear"
 grep -q '"bright"' "$root/manifest.json" || fail "schema looks must include bright"
-grep -q '"podcastEq": "clear"' "$root/manifest.json" || fail "Enhanced default look is Clear"
+grep -q '"podcastEq": "clear"' "$root/manifest.json" || fail "Denoise default look is Clear"
 grep -q 'function setEqCurve' "$root/Panel.qml" || fail "look chips must call setEqCurve"
 grep -q 'onClicked: root.setEqCurve' "$root/Panel.qml" || fail "look chips must click through setEqCurve"
 grep -Fq 'patch[prefix + "BodyDb"] = 0' "$root/Panel.qml" || fail "look click must zero Body trim"
@@ -131,7 +131,7 @@ grep -q 'Your voice, better heard' "$root/README.md" || fail "README must keep t
 grep -q 'component QualitySlider' "$root/Panel.qml" || fail "settings need a 3-stop quality slider"
 grep -qi 'meeting' "$root/Service.qml" "$root/Panel.qml" "$root/Model.js" && fail "Meeting is gone"
 grep -q '"--quality"' "$root/Service.qml" || fail "host must pass --quality"
-grep -q '"--engine"' "$root/Service.qml" && fail "engine picker is gone; Enhanced always runs DPDFNet"
+grep -q '"--engine"' "$root/Service.qml" && fail "engine picker is gone; Denoise always runs DPDFNet"
 grep -q '"--capture-gain-db"' "$root/Service.qml" || fail "host must bake capture gain"
 grep -q '"--output-gain-db"' "$root/Service.qml" || fail "host must bake output gain"
 grep -q 'omavoice-ctl' "$root/Service.qml" || fail "live controls must use omavoice-ctl"
@@ -224,6 +224,6 @@ grep -q 'haveDpdfnet || !probed' "$root/Service.qml" || fail "do not flash DPDFN
 grep -B1 'if (dy === 0) return' "$root/Panel.qml" | grep -q '^    }' || fail "Left/Right must move between mode chips before the dy guard"
 grep -q 'launchSetup' "$root/Panel.qml" && fail "the setup command row is gone"
 
-grep -q 'label: "Podcast"' "$root/Panel.qml" && fail "the mode is called Enhanced, not Podcast"
+grep -q 'label: "Podcast"' "$root/Panel.qml" && fail "the mode is called Denoise, not Podcast"
 
 echo "qml.test: ok"

@@ -320,7 +320,7 @@ Item {
     var name = afterNodeName
     var id = afterNodeId
     var token = name && id ? name + ":" + id : ""
-    // Panel After needs a consumer. Enhanced/Clean stay silent unless a
+    // Panel After needs a consumer. Denoise/Clean stay silent unless a
     // hold is attached to this node id, not the previous omavoice.
     var want = meterHoldWanted && enabled && !!token
     if (!want) {

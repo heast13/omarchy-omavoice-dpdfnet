@@ -6,7 +6,7 @@
   "author": "GigaSolo",
   "license": "MIT",
   "homepage": "https://github.com/gigasolo/omavoice",
-  "description": "A DPDFNet virtual microphone for calls, OBS and recording. Enhanced / Clean and Voice looks.",
+  "description": "A DPDFNet virtual microphone for calls, OBS and recording. Denoise / Clean and Voice looks.",
   "kinds": [
     "service",
     "bar-widget"
@@ -17,7 +17,7 @@
   },
   "barWidget": {
     "displayName": "Omavoice",
-    "description": "Virtual mic with DPDFNet noise suppression. Enhanced / Clean and Voice looks.",
+    "description": "Virtual mic with DPDFNet noise suppression. Denoise / Clean and Voice looks.",
     "category": "Audio",
     "aliases": [
       "omavoice",
@@ -81,7 +81,7 @@
       {
         "key": "podcastQuality",
         "type": "enum",
-        "label": "Denoise: Softer, Balanced, or Stronger",
+        "label": "Denoise strength: Softer, Balanced, or Stronger",
         "options": [
           "good",
           "better",
@@ -92,7 +92,7 @@
       {
         "key": "podcastEq",
         "type": "enum",
-        "label": "Enhanced voice look",
+        "label": "Denoise voice look",
         "options": [
           "neutral",
           "warm",
@@ -104,7 +104,7 @@
       {
         "key": "podcastEqBodyDb",
         "type": "number",
-        "label": "Enhanced body trim (dB)",
+        "label": "Denoise body trim (dB)",
         "min": -6,
         "max": 6,
         "step": 0.5,
@@ -113,7 +113,7 @@
       {
         "key": "podcastEqPresenceDb",
         "type": "number",
-        "label": "Enhanced presence trim (dB)",
+        "label": "Denoise presence trim (dB)",
         "min": -6,
         "max": 6,
         "step": 0.5,
@@ -122,7 +122,7 @@
       {
         "key": "podcastEqAirDb",
         "type": "number",
-        "label": "Enhanced air trim (dB)",
+        "label": "Denoise air trim (dB)",
         "min": -6,
         "max": 6,
         "step": 0.5,

@@ -23,8 +23,8 @@ test("normalizePreset falls back to podcast, also for the old meeting", () => {
   assert.equal(Model.normalizePreset("podcast"), "podcast")
   assert.equal(Model.normalizePreset("CLEAN"), "clean")
   assert.equal(Model.normalizePreset("meeting"), "podcast")
-  assert.equal(Model.normalizePreset("Enhanced"), "podcast")
-  assert.equal(Model.presetLabel("podcast"), "Enhanced")
+  assert.equal(Model.normalizePreset("Denoise"), "podcast")
+  assert.equal(Model.presetLabel("podcast"), "Denoise")
   assert.equal(Model.normalizePreset("nope"), "podcast")
   assert.equal(Model.normalizePreset(""), "podcast")
 })
@@ -304,7 +304,7 @@ test("statusText reports the live preset and device", () => {
     targetName: usb.name,
     targetLabel: usb.description
   })
-  assert.match(text, /Enhanced/)
+  assert.match(text, /Denoise/)
   assert.match(text, /QUALCOMM/)
 })
 
@@ -316,7 +316,7 @@ test("statusText names the preset while the host is starting", () => {
     preset: "podcast",
     targetName: usb.name
   })
-  assert.equal(text, "Starting Enhanced…")
+  assert.equal(text, "Starting Denoise…")
 })
 
 test("statusText names the duck: mic, reload", () => {

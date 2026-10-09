@@ -43,7 +43,7 @@ Panel {
   Component.onCompleted: pushSettings()
 
   readonly property var presets: [
-    { value: "podcast", label: "Enhanced", hint: "Calls, OBS, recording" },
+    { value: "podcast", label: "Denoise", hint: "Calls, OBS, recording" },
     { value: "clean", label: "Clean", hint: "High-pass only" }
   ]
   readonly property var captureSources: {
@@ -500,7 +500,7 @@ Panel {
       onTabRequested: function(direction) { root.switchPanel(direction) }
       onTextKey: function(t) {
         if (root.tuneOpen) return
-        if (t === "e" || t === "E") root.choosePreset("podcast")
+        if (t === "d" || t === "D") root.choosePreset("podcast")
         else if (t === "c" || t === "C") root.choosePreset("clean")
         else if (t === "o" || t === "O") root.toggleEnabled()
         else if (t === "r" || t === "R") {
@@ -660,7 +660,7 @@ Panel {
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
                 iconText: "󰒓"
-                tooltipText: "Tune Enhanced"
+                tooltipText: "Tune Denoise"
                 foreground: root.foreground
                 fontFamily: root.fontFamily
                 onClicked: root.showTune(true)
@@ -1118,7 +1118,7 @@ Panel {
           }
 
           QualitySlider {
-            title: "Denoise"
+            title: "Strength"
             enabled: service.preset !== "clean"
             opacity: enabled ? 1 : 0.5
             quality: service.quality
