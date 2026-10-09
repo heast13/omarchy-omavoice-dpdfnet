@@ -6,6 +6,9 @@ fail() { echo "qml.test: $*" >&2; exit 1; }
 
 grep -q 'systemd-run --user' "$root/scripts/omavoice-run" || fail "the host must run as a systemd unit to escape the shell's realtime cap"
 grep -q "systemctl --user stop 'omavoice-host-\*.service'" "$root/scripts/omavoice-run" || fail "a start must stop leftover host units"
+grep -q 'onDeesserChanged: applyLiveControls()' "$root/Service.qml" || fail "the de-esser level must write live"
+grep -q '"deess:enabled"|"deess:thresh"|"deess:ratio"' "$root/scripts/omavoice-ctl" || fail "omavoice-ctl must allow the de-esser keys"
+grep -q '"key": "deesser"' "$root/manifest.json" || fail "manifest must declare the deesser setting"
 grep -q 'onHighpassChanged: applyLiveControls()' "$root/Service.qml" || fail "the high-pass switch must write live, not restart the host"
 grep -q 'Model.hpFreq(highpass, eqCurve)' "$root/Service.qml" || fail "live controls must write hp:Freq in every mode"
 grep -q '"key": "highpass"' "$root/manifest.json" || fail "manifest must declare the highpass setting"

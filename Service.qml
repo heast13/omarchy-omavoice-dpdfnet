@@ -88,6 +88,7 @@ Item {
   readonly property string quality: Model.normalizeQuality(setting("podcastQuality", "better"))
   readonly property string dpModel: Model.normalizeModel(setting("dpModel", "auto"))
   readonly property bool highpass: setting("highpass", true) !== false
+  readonly property string deesser: Model.normalizeDeesser(setting("deesser", "off"))
   // Realtime only matters for DPDFNet; ask for rtkit there.
   readonly property bool rtkitNeeded: probed && !haveRtkit && preset === "podcast" && haveDpdfnet
   readonly property string pinnedSource: String(setting("pinnedSource", "") || "")
@@ -236,7 +237,7 @@ Item {
     promoted = false
     hostStartedAt = Date.now()
     hostProcess.running = false
-    var args = [scriptPath("omavoice-run"), "--preset", preset, "--quality", quality, "--model", dpModel, "--highpass", highpass ? "on" : "off", "--capture-gain-db", String(captureGainDb), "--output-gain-db", String(outputGainDb), "--target", targetName, "--dir", pluginDir]
+    var args = [scriptPath("omavoice-run"), "--preset", preset, "--quality", quality, "--model", dpModel, "--highpass", highpass ? "on" : "off", "--deesser", deesser, "--capture-gain-db", String(captureGainDb), "--output-gain-db", String(outputGainDb), "--target", targetName, "--dir", pluginDir]
     if (eqCurve) {
       args.push("--eq", eqCurve)
       args.push("--eq-body-db", String(eqTrim.body))
@@ -273,6 +274,10 @@ Item {
       args.push("denoise:Attenuation Limit (dB)", String(Model.dpAttenuation(quality)))
     // Every mode has the hp node, Clean too.
     args.push("hp:Freq", String(Model.hpFreq(highpass, eqCurve)))
+    if (preset !== "clean") {
+      var ds = Model.deesserParams(deesser)
+      args.push("deess:enabled", String(ds.enabled), "deess:thresh", String(ds.thresh), "deess:ratio", String(ds.ratio))
+    }
     if (eqCurve) {
       var bands = eqBands
       args.push("eq_body:Gain", String(bands.body))
@@ -462,6 +467,7 @@ Item {
   }
   onQualityChanged: applyLiveControls()
   onHighpassChanged: applyLiveControls()
+  onDeesserChanged: applyLiveControls()
   onEqCurveChanged: applyLiveControls()
   onEqBodyDbChanged: applyLiveControls()
   onEqPresDbChanged: applyLiveControls()

@@ -7,6 +7,7 @@ var MODELS = ["auto", "large", "small"]
 // High-pass "off" is a 10 Hz corner, not a missing node, so the switch
 // writes live without a host restart. Must match omavoice-run.
 var HP_OFF_HZ = 10
+var DEESSER_LEVELS = ["off", "light", "medium", "strong"]
 var EQ_CURVES = ["neutral", "warm", "clear", "bright", "custom"]
 
 // The stored key stays "podcast"; the UI calls that mode Denoise.
@@ -360,6 +361,35 @@ function hpHint(on, curve) {
   return "Cuts rumble below " + hpFreq(true, curve) + " Hz."
 }
 
+function normalizeDeesser(value) {
+  var level = String(value || "").toLowerCase()
+  if (DEESSER_LEVELS.indexOf(level) >= 0) return level
+  return "off"
+}
+
+function deesserLabel(value) {
+  var level = normalizeDeesser(value)
+  return level.charAt(0).toUpperCase() + level.slice(1)
+}
+
+// Linear thresholds -24 / -30 / -36 dB. Off is the bypassed node, so the
+// level writes live. Must match omavoice-run's deesser_node.
+function deesserParams(value) {
+  var level = normalizeDeesser(value)
+  if (level === "light") return { enabled: 1, thresh: 0.0631, ratio: 2 }
+  if (level === "medium") return { enabled: 1, thresh: 0.0316, ratio: 4 }
+  if (level === "strong") return { enabled: 1, thresh: 0.0158, ratio: 8 }
+  return { enabled: 0, thresh: 0.0316, ratio: 4 }
+}
+
+function deesserHint(value) {
+  var level = normalizeDeesser(value)
+  if (level === "light") return "Takes the edge off sharp S sounds."
+  if (level === "medium") return "Tames S and SH clearly. Good for bright mics."
+  if (level === "strong") return "Heavy. Can lisp if you push the mic."
+  return "Off. S sounds pass as they are."
+}
+
 function eqBandBase(curve, band) {
   var c = eqCurveParams(curve)
   if (band === "pres") return c.pres
@@ -551,6 +581,11 @@ if (typeof module !== "undefined") {
     dpAttenuation: dpAttenuation,
     MODELS: MODELS,
     HP_OFF_HZ: HP_OFF_HZ,
+    DEESSER_LEVELS: DEESSER_LEVELS,
+    normalizeDeesser: normalizeDeesser,
+    deesserLabel: deesserLabel,
+    deesserParams: deesserParams,
+    deesserHint: deesserHint,
     hpFreq: hpFreq,
     hpHint: hpHint,
     normalizeModel: normalizeModel,

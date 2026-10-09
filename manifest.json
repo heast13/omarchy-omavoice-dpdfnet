@@ -36,6 +36,7 @@
       "podcastQuality": "better",
       "dpModel": "auto",
       "highpass": true,
+      "deesser": "off",
       "podcastEq": "clear",
       "podcastEqBodyDb": 0,
       "podcastEqPresenceDb": 0,
@@ -94,6 +95,18 @@
           "best"
         ],
         "defaultValue": "better"
+      },
+      {
+        "key": "deesser",
+        "type": "enum",
+        "label": "De-esser: Off, Light, Medium, or Strong",
+        "options": [
+          "off",
+          "light",
+          "medium",
+          "strong"
+        ],
+        "defaultValue": "off"
       },
       {
         "key": "highpass",

@@ -405,3 +405,15 @@ test("Custom keeps its own trims apart from the named looks", () => {
   assert.deepEqual(Model.eqBandGains("custom", { body: 4, pres: -2.5, air: 6 }), { hpHz: 80, body: 4, pres: -2.5, air: 6 })
   assert.match(Model.eqCurveHint("custom"), /Kept/)
 })
+
+test("De-esser levels map to bypass and rising strength", () => {
+  assert.deepEqual(Model.DEESSER_LEVELS, ["off", "light", "medium", "strong"])
+  assert.equal(Model.normalizeDeesser("Strong"), "strong")
+  assert.equal(Model.normalizeDeesser("max"), "off")
+  assert.equal(Model.deesserLabel("medium"), "Medium")
+  assert.equal(Model.deesserParams("off").enabled, 0)
+  const l = Model.deesserParams("light"), m = Model.deesserParams("medium"), h = Model.deesserParams("strong")
+  assert.ok(l.thresh > m.thresh && m.thresh > h.thresh)
+  assert.ok(l.ratio < m.ratio && m.ratio < h.ratio)
+  assert.match(Model.deesserHint("off"), /^Off/)
+})

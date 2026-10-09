@@ -733,7 +733,7 @@ Panel {
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
                 iconText: "󰒓"
-                tooltipText: "Voice, High-pass, Strength and Model"
+                tooltipText: "Voice, High-pass, De-esser, Strength and Model"
                 foreground: root.foreground
                 fontFamily: root.fontFamily
                 onClicked: root.showTune(true)
@@ -1227,6 +1227,75 @@ Panel {
               font.family: root.fontFamily
               font.pixelSize: Style.font.caption
               wrapMode: Text.WordWrap
+            }
+          }
+
+          Column {
+            width: parent.width
+            spacing: Style.space(8)
+            enabled: service.preset !== "clean"
+            opacity: enabled ? 1 : 0.5
+
+            Text {
+              text: "De-esser"
+              color: root.foreground
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.subtitle
+              font.bold: true
+            }
+
+            Text {
+              width: parent.width
+              text: Model.deesserHint(service.deesser)
+              color: root.dim
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.caption
+              wrapMode: Text.WordWrap
+            }
+
+            Row {
+              width: parent.width
+              spacing: Style.space(6)
+
+              Repeater {
+                model: Model.DEESSER_LEVELS
+                Item {
+                  required property string modelData
+                  readonly property bool isCurrent: service.deesser === modelData
+                  width: Math.floor((parent.width - Style.space(6) * 3) / 4)
+                  implicitHeight: Style.space(32)
+
+                  MouseArea {
+                    id: deessHit
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.persistSettings({ deesser: modelData })
+                  }
+                  PanelToolTip {
+                    visible: deessHit.containsMouse
+                    text: Model.deesserHint(modelData)
+                    fontFamily: root.fontFamily
+                  }
+                  Rectangle {
+                    anchors.fill: parent
+                    radius: Style.cornerRadius
+                    color: parent.isCurrent
+                      ? (bar ? Style.selectedFillFor(bar.foreground, Color.accent) : Color.accent)
+                      : "transparent"
+                    border.width: 1
+                    border.color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.18)
+                  }
+                  Text {
+                    anchors.centerIn: parent
+                    text: Model.deesserLabel(modelData)
+                    color: root.foreground
+                    font.family: root.fontFamily
+                    font.pixelSize: Style.font.caption
+                    font.bold: parent.isCurrent
+                  }
+                }
+              }
             }
           }
 

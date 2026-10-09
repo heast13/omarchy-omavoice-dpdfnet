@@ -227,4 +227,22 @@ grep -A5 'name = eq_pres' <<<"$custom_conf" | grep -q '"Gain" = -1.5' || fail "C
 grep -A5 'name = eq_air' <<<"$custom_conf" | grep -q '"Gain" = 2.0' || fail "Custom air must be the trim alone"
 grep -A4 'name = hp' <<<"$custom_conf" | grep -q '"Freq" = 80.0' || fail "Custom keeps the 80 Hz high-pass"
 
+if [[ -f /usr/lib/lv2/lsp-plugins.lv2/deesser_mono.ttl ]]; then
+  for level in off light medium strong; do
+    conf=$(dump podcast --deesser $level)
+    grep -q 'lsp-plug.in/plugins/lv2/deesser_mono' <<<"$conf" || fail "Denoise must carry the de-esser node ($level)"
+  done
+  off_conf=$(dump podcast --deesser off)
+  grep -A5 'name = deess' <<<"$off_conf" | grep -q '"enabled" = 0' || fail "de-esser Off must be the bypassed node"
+  strong_conf=$(dump natural --deesser strong)
+  grep -A14 'name = deess' <<<"$strong_conf" | grep -q '"thresh" = 0.0158' || fail "Strong must use the -36 dB threshold"
+  grep -A14 'name = deess' <<<"$strong_conf" | grep -q '"ratio" = 8' || fail "Strong must use ratio 8"
+  grep -q 'output = "eq_air:Out" input = "deess:in"' <<<"$strong_conf" || fail "de-esser must follow the voice EQ"
+  grep -q 'output = "deess:out"' <<<"$strong_conf" || fail "de-esser must feed the chain"
+  bogus_conf=$(dump podcast --deesser max)
+  grep -A5 'name = deess' <<<"$bogus_conf" | grep -q '"enabled" = 0' || fail "an unknown level must be Off"
+fi
+clean_conf=$(dump clean --deesser strong)
+grep -q 'deesser_mono' <<<"$clean_conf" && fail "Clean must not de-ess"
+
 echo "dump.test: ok"

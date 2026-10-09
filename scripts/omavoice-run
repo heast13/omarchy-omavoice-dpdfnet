@@ -8,6 +8,7 @@ preset="podcast"
 quality="better"
 model="auto"
 highpass="on"
+deesser="off"
 capture_gain_db=0
 output_gain_db=0
 eq_opt=""
@@ -20,7 +21,7 @@ dump=0
 runtime_dir="${XDG_RUNTIME_DIR:-/tmp}/omavoice"
 
 usage() {
-  echo "Usage: omavoice-run [--dump] --preset podcast|natural|clean [--quality good|better|best] [--model auto|large|small] [--highpass on|off] [--eq neutral|warm|clear|bright|custom] [--eq-body-db N] [--eq-pres-db N] [--eq-air-db N] [--capture-gain-db N] [--output-gain-db N] --target <node.name> --dir <plugin-dir>" >&2
+  echo "Usage: omavoice-run [--dump] --preset podcast|natural|clean [--quality good|better|best] [--model auto|large|small] [--highpass on|off] [--deesser off|light|medium|strong] [--eq neutral|warm|clear|bright|custom] [--eq-body-db N] [--eq-pres-db N] [--eq-air-db N] [--capture-gain-db N] [--output-gain-db N] --target <node.name> --dir <plugin-dir>" >&2
   exit 2
 }
 
@@ -34,6 +35,7 @@ while [[ $# -gt 0 ]]; do
     --quality) quality="${2:-}"; shift 2 ;;
     --model) model="${2:-}"; shift 2 ;;
     --highpass) highpass="${2:-}"; shift 2 ;;
+    --deesser) deesser="${2:-}"; shift 2 ;;
     --eq) eq_opt="${2:-}"; shift 2 ;;
     --eq-body-db) eq_body_db="${2:-0}"; shift 2 ;;
     --eq-pres-db) eq_pres_db="${2:-0}"; shift 2 ;;
@@ -54,6 +56,7 @@ done
 [[ $quality == good || $quality == better || $quality == best ]] || quality=better
 [[ $model == auto || $model == large || $model == small ]] || model=auto
 [[ $highpass == off ]] || highpass=on
+[[ $deesser == light || $deesser == medium || $deesser == strong ]] || deesser=off
 
 # DPDFNet: the local copy first, else HushMic's system install. The plugin
 # reads its model and ONNX Runtime paths from the env of the pipewire host.
@@ -104,6 +107,8 @@ fi
 
 have_lsp=0
 [[ -f /usr/lib/lv2/lsp-plugins.lv2/compressor_mono.ttl && -f /usr/lib/lv2/lsp-plugins.lv2/limiter_mono.ttl ]] && have_lsp=1
+have_deess=0
+[[ -f /usr/lib/lv2/lsp-plugins.lv2/deesser_mono.ttl ]] && have_deess=1
 
 db_to_linear() {
   awk -v db="${1:-0}" 'BEGIN {
@@ -323,6 +328,41 @@ eq_highshelf_node() {
 EOF
 }
 
+# LSP de-esser: only the band above 4 kHz is compressed, keyed by a 4.5 kHz
+# side-chain high-pass. FFT meters off, they only feed LSP's own UI. Off
+# keeps the node bypassed so the level writes live. Thresholds are linear
+# (-24 / -30 / -36 dB). Must match Model.deesserParams.
+deesser_node() {
+  local enabled=1 thresh=0.0316 ratio=4
+  case $deesser in
+    light) thresh=0.0631; ratio=2 ;;
+    medium) thresh=0.0316; ratio=4 ;;
+    strong) thresh=0.0158; ratio=8 ;;
+    *) enabled=0 ;;
+  esac
+  cat <<EOF
+                    {
+                        type = lv2
+                        name = deess
+                        plugin = "http://lsp-plug.in/plugins/lv2/deesser_mono"
+                        control = {
+                            "enabled" = $enabled
+                            "ife" = 0
+                            "sfe" = 0
+                            "ofe" = 0
+                            "xsplit" = 2
+                            "split" = 4000
+                            "hpf_s" = 2
+                            "hpf_f" = 4500
+                            "thresh" = $thresh
+                            "ratio" = $ratio
+                            "att" = 1
+                            "rel" = 40
+                        }
+                    }
+EOF
+}
+
 # HushMic's DPDFNet plugin. Mode 0 = suppress.
 dpdfnet_node() {
   local atten=$1
@@ -431,6 +471,13 @@ add_link() {
     eq_highshelf_node eq_air 8000 "$eq_air_gain"
     add_link "$prev_out" "eq_air:In"
     prev_out="eq_air:Out"
+  fi
+
+  # After the EQ (Air lifts the S band), before the compressor.
+  if [[ $preset != clean && $have_deess -eq 1 ]]; then
+    deesser_node
+    add_link "$prev_out" "deess:in"
+    prev_out="deess:out"
   fi
 
   if [[ $preset != clean ]]; then

@@ -26,6 +26,7 @@ allowed_key() {
   case $1 in
     "preamp:Gain 1"|"outgain:Gain 1"|"hp:Freq"|"eq_body:Gain"|"eq_pres:Gain"|"eq_air:Gain") return 0 ;;
     "denoise:Attenuation Limit (dB)") return 0 ;;
+    "deess:enabled"|"deess:thresh"|"deess:ratio") return 0 ;;
     *) return 1 ;;
   esac
 }
