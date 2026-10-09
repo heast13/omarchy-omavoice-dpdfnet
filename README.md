@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="preview.png" alt="Omavoice DPDFNet panel: Denoise and Clean, selected mic with live level" width="380">
+  <img src="preview.png" alt="Omavoice DPDFNet panel: Denoise, Natural and Clean, selected mic with live level" width="380">
   <img src="docs/preview-tune.png" alt="Mode settings: Voice looks, Body / Presence / Air, Strength" width="380">
 </p>
 
