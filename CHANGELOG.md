@@ -1,47 +1,42 @@
 # Changelog
 
-All notable changes to Omavoice are documented here.
+All notable changes to Omavoice DPDFNet are documented here. Entries up to
+0.3.2 are upstream Omavoice by GigaSolo.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-## [0.3.2-dpdfnet.2] — 2026-10-09
+## [0.4.0] — 2026-10-09
 
-Local build: DPDFNet only.
+First release of the fork **Omavoice DPDFNet** (`heast13.omavoice-dpdfnet`),
+based on upstream Omavoice 0.3.2.
+
+### Added
+
+- **DPDFNet** noise suppression (Ceva), loaded from HushMic's LADSPA plugin
+  (`hushmic-bin`) or from a copy in `~/.local/share/omavoice/dpdfnet`. The
+  HushMic app does not need to run.
+- **Strength** Softer / Balanced / Stronger caps DPDFNet at 24 / 48 / 100 dB.
+- Left / Right moves between the mode chips.
+
+### Changed
+
+- New plugin id `heast13.omavoice-dpdfnet` and name **Omavoice DPDFNet**.
+  Never enable it together with upstream `gigasolo.omavoice`.
+- Two modes: **Denoise** (was Podcast) and **Clean**. The PRESET section is
+  now **MODE**. Settings keys stay `podcast*`; a stored `meeting` preset
+  falls back to Denoise.
+- Without DPDFNet, Denoise skips noise suppression and the compressor, and
+  the panel says **DPDFNet missing**.
+- Strength is disabled on Clean, like Voice.
 
 ### Removed
 
 - **Meeting** preset, WebRTC echo cancel and `omavoice-ctl aec-sync`.
-- **RNNoise** and **DeepFilterNet** engines, the engine picker and **Auto**.
-- `ROADMAP.md` and `docs/audit-0.2.md`; both described the removed parts.
-
-### Changed
-
-- Podcast always runs DPDFNet. Without it, Podcast skips denoise and the
-  compressor, and the panel says **DPDFNet missing**.
-- DPDFNet loads from `~/.local/share/omavoice/dpdfnet`, else from a system
-  `hushmic-bin`.
-- A stored `meeting` preset falls back to Podcast.
-- The PRESET section is now **MODE**, and Podcast is shown as **Denoise**
-  (key `d`); its slider on the settings page is **Strength**. Settings keys
-  stay `podcast*`.
-
-## [0.3.2-dpdfnet.1] — 2026-10-09
-
-Local build: DPDFNet as a third denoise engine.
-
-### Added
-
-- **DPDFNet** engine on the PRESET tune page, using the LADSPA plugin that
-  ships with HushMic (`hushmic-bin`). The HushMic app does not need to run.
-- Softer / Balanced / Stronger cap DPDFNet at 24 / 48 / 100 dB.
-
-### Changed
-
-- **Auto** picks DPDFNet for Meeting and Podcast when HushMic is installed.
-  Without it, Auto keeps the old RNNoise / DeepFilterNet policy.
+- **RNNoise** and **DeepFilterNet**, the engine picker and **Auto**.
+- The setup command row; `ROADMAP.md` and `docs/audit-0.2.md`.
 
 ## [0.3.2] — 2026-09-21
 
@@ -385,7 +380,8 @@ Live level and engine picker. Notes is not in this release.
   guidance.
 - MIT license (GigaSolo LLC).
 
-[Unreleased]: https://github.com/gigasolo/omavoice/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/heast13/omarchy-omavoice-dpdfnet/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/heast13/omarchy-omavoice-dpdfnet/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/gigasolo/omavoice/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/gigasolo/omavoice/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/gigasolo/omavoice/compare/v0.2.0...v0.3.0

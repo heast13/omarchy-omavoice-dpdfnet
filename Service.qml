@@ -77,6 +77,7 @@ Item {
     return ""
   }
 
+  readonly property string pluginId: manifest && manifest.id ? String(manifest.id) : "heast13.omavoice-dpdfnet"
   readonly property string pluginDir: manifest && manifest.__sourceDir ? String(manifest.__sourceDir) : Qt.resolvedUrl(".").toString().replace(/^file:\/\//, "").replace(/\/$/, "")
   readonly property bool enabled: setting("enabled", true) !== false
   readonly property string preset: Model.normalizePreset(setting("preset", "podcast"))
@@ -301,11 +302,11 @@ Item {
       settings = next
       return
     }
-    var entry = { id: "gigasolo.omavoice" }
+    var entry = { id: pluginId }
     for (var k in settings) if (k !== "id") entry[k] = settings[k]
     for (var n in values) entry[n] = values[n]
     settings = entry
-    shell.updateEntryInline("gigasolo.omavoice", entry)
+    shell.updateEntryInline(pluginId, entry)
   }
 
   // Filter-chain sources are node.passive, so After peaks stay at 0 unless

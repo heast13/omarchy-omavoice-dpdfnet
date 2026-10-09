@@ -404,7 +404,7 @@ function setupGuide(preset, haveDpdfnet) {
   return {
     needed: true,
     hero: "DPDFNet missing",
-    body: "Copy the DPDFNet plugin, model and ONNX Runtime to ~/.local/share/omavoice/dpdfnet, then reload."
+    body: "Install hushmic-bin from the AUR, or copy its DPDFNet files to ~/.local/share/omavoice/dpdfnet. Then reload."
   }
 }
 

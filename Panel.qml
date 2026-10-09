@@ -10,8 +10,8 @@ import "Model.js" as Model
 
 Panel {
   id: root
-  moduleName: "gigasolo.omavoice"
-  ipcTarget: "gigasolo.omavoice"
+  moduleName: "heast13.omavoice-dpdfnet"
+  ipcTarget: "omavoice.panel"
   manageIpc: false
 
   property string focusSection: "header"

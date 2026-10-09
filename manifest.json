@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "id": "gigasolo.omavoice",
-  "name": "Omavoice",
-  "version": "0.3.2-dpdfnet.2",
-  "author": "GigaSolo",
+  "id": "heast13.omavoice-dpdfnet",
+  "name": "Omavoice DPDFNet",
+  "version": "0.4.0",
+  "author": "heast13",
   "license": "MIT",
-  "homepage": "https://github.com/gigasolo/omavoice",
+  "homepage": "https://github.com/heast13/omarchy-omavoice-dpdfnet",
   "description": "A DPDFNet virtual microphone for calls, OBS and recording. Denoise / Clean and Voice looks.",
   "kinds": [
     "service",
@@ -16,7 +16,7 @@
     "barWidget": "Panel.qml"
   },
   "barWidget": {
-    "displayName": "Omavoice",
+    "displayName": "Omavoice DPDFNet",
     "description": "Virtual mic with DPDFNet noise suppression. Denoise / Clean and Voice looks.",
     "category": "Audio",
     "aliases": [
