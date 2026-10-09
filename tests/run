@@ -7,5 +7,6 @@ node --test "$root/tests"/*.test.js
 "$root/tests/dump.test.sh"
 "$root/tests/qml.test.sh"
 "$root/tests/ctl.test.sh"
+"$root/tests/fetch.test.sh"
 "$root/tests/host-smoke.test.sh"
 omarchy plugin validate "$root"

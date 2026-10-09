@@ -8,6 +8,19 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-10-09
+
+### Added
+
+- **Download DPDFNet** button (key `i`) when DPDFNet is missing. It fetches
+  the pinned HushMic 0.10.2 release from GitHub, checks its sha256, and keeps
+  only the four files Omavoice loads in `~/.local/share/omavoice/dpdfnet/`.
+  No root, no AUR package, no HushMic app. Same as `scripts/omavoice-fetch`.
+
+### Changed
+
+- The `hushmic-bin` package is now optional.
+
 ## [0.5.0] — 2026-10-09
 
 ### Added

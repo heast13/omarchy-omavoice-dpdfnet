@@ -409,13 +409,17 @@ function setupGuide(preset, haveDpdfnet) {
   return {
     needed: true,
     hero: "DPDFNet missing",
-    body: "Install hushmic-bin from the AUR, or copy its DPDFNet files to ~/.local/share/omavoice/dpdfnet. Then reload."
+    body: "Download it once from the HushMic release (62 MB, no root), or install hushmic-bin from the AUR and reload."
   }
 }
 
 function hostErrorText(kind, raw) {
   var t = String(raw || "")
   if (kind === "probe") return "Could not check audio plugins."
+  if (kind === "fetch") {
+    var lines = t.split("\n")
+    return lines[lines.length - 1].trim() || "DPDFNet download failed."
+  }
   if (t.indexOf("session PipeWire did not answer") >= 0) return "PipeWire did not answer."
   return "Could not start the microphone."
 }

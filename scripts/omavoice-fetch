@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# Download DPDFNet from a pinned HushMic release into the local folder that
+# omavoice-run and omavoice-probe check first. No root, no HushMic app.
+# Only the four files the chain loads are kept; the rest of the tarball goes.
+set -euo pipefail
+
+# Bump all three together. The checksum is HushMic's own sha256sums.txt entry.
+version="0.10.2"
+sha256="45343ee183eed2bdcd56e46d57ca4065ad01d0e7fd6a678c2fe61a0b10a6de91"
+url="${OMAVOICE_FETCH_URL:-https://github.com/Fovty/hushmic/releases/download/v$version/hushmic-$version-x86_64.tar.gz}"
+
+dest="${XDG_DATA_HOME:-$HOME/.local/share}/omavoice/dpdfnet"
+
+fail() {
+  echo "$1" >&2
+  exit 1
+}
+
+[[ $(uname -m) == x86_64 ]] || fail "DPDFNet download is x86_64 only."
+command -v curl >/dev/null || fail "curl is missing."
+
+mkdir -p "$(dirname "$dest")"
+work=$(mktemp -d "$(dirname "$dest")/.dpdfnet-fetch.XXXXXX")
+trap 'rm -rf "$work"' EXIT
+
+curl -fsSL --retry 2 --connect-timeout 15 -o "$work/hushmic.tar.gz" "$url" \
+  || fail "Download failed. Check the connection."
+echo "$sha256  $work/hushmic.tar.gz" | sha256sum -c --status - \
+  || fail "Download did not match the expected checksum."
+
+top="hushmic-$version-x86_64"
+tar -xzf "$work/hushmic.tar.gz" -C "$work" --wildcards \
+  "$top/lib/ladspa/libdpdfnet_ladspa.so" \
+  "$top/lib/hushmic/libonnxruntime.so*" \
+  "$top/share/hushmic/models/dpdfnet8_48khz_hr.onnx" \
+  "$top/share/hushmic/models/dpdfnet8_48khz_hr.weights.f32" \
+  || fail "The HushMic release is missing DPDFNet files."
+
+# libonnxruntime.so is a soname symlink chain; keep only the real file.
+src="$work/$top"
+ort=$(readlink -f "$src/lib/hushmic/libonnxruntime.so")
+[[ $ort == "$src"/* && -f $ort ]] || fail "The HushMic release has no ONNX Runtime."
+
+stage="$work/dpdfnet"
+mkdir "$stage"
+install -m644 "$src/lib/ladspa/libdpdfnet_ladspa.so" "$stage/"
+install -m644 "$ort" "$stage/libonnxruntime.so"
+install -m644 "$src/share/hushmic/models/dpdfnet8_48khz_hr.onnx" "$stage/"
+install -m644 "$src/share/hushmic/models/dpdfnet8_48khz_hr.weights.f32" "$stage/"
+printf '%s\n' "$version" > "$stage/VERSION"
+
+# Swap in place. A running host keeps the old files open until reload.
+if [[ -e $dest ]]; then
+  mv "$dest" "$work/old"
+fi
+mv "$stage" "$dest"
+echo "DPDFNet $version installed in $dest"

@@ -505,6 +505,7 @@ Panel {
         else if (t === "n" || t === "N") root.choosePreset("natural")
         else if (t === "c" || t === "C") root.choosePreset("clean")
         else if (t === "o" || t === "O") root.toggleEnabled()
+        else if ((t === "i" || t === "I") && root.setup.needed) service.fetchDpdfnet()
         else if (t === "r" || t === "R") {
           if (typeof service.reload === "function") service.reload()
         }
@@ -633,6 +634,36 @@ Panel {
               font.family: root.fontFamily
               font.pixelSize: Style.font.bodySmall
               wrapMode: Text.WordWrap
+            }
+
+            Item {
+              id: fetchButton
+              width: parent.width
+              implicitHeight: Style.space(36)
+              opacity: service.fetching ? 0.55 : 1
+
+              MouseArea {
+                anchors.fill: parent
+                hoverEnabled: true
+                enabled: !service.fetching
+                cursorShape: Qt.PointingHandCursor
+                onClicked: service.fetchDpdfnet()
+              }
+              Rectangle {
+                anchors.fill: parent
+                radius: Style.cornerRadius
+                color: "transparent"
+                border.width: 1
+                border.color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.18)
+              }
+              Text {
+                anchors.centerIn: parent
+                text: service.fetching ? "Downloading DPDFNet…" : "Download DPDFNet  ·  i"
+                color: root.foreground
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.caption
+                font.bold: true
+              }
             }
           }
 

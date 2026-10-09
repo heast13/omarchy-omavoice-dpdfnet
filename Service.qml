@@ -14,6 +14,7 @@ Item {
 
   property bool probed: false
   property bool haveDpdfnet: false
+  property bool fetching: false
   property string lastError: ""
   property string actionStatus: ""
   property string targetName: ""
@@ -391,6 +392,15 @@ Item {
     probeProcess.running = true
   }
 
+  // Download DPDFNet into ~/.local/share/omavoice/dpdfnet, then reload.
+  function fetchDpdfnet() {
+    if (fetching) return
+    fetching = true
+    lastError = ""
+    fetchProcess.command = [scriptPath("omavoice-fetch")]
+    fetchProcess.running = true
+  }
+
   // Re-scan for DPDFNet and rebuild the chain. Needed after copying its
   // files without restarting the shell.
   function reload() {
@@ -527,6 +537,19 @@ Item {
         }
         probed = true
       }
+    }
+  }
+
+  Process {
+    id: fetchProcess
+    property string errorText: ""
+    stderr: StdioCollector {
+      onStreamFinished: fetchProcess.errorText = String(this.text || "").trim()
+    }
+    onExited: function(exitCode) {
+      root.fetching = false
+      if (exitCode === 0) root.reload()
+      else root.lastError = Model.hostErrorText("fetch", fetchProcess.errorText)
     }
   }
 

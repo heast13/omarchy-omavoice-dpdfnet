@@ -268,7 +268,7 @@ test("dpAttenuation matches the dump DPDFNet caps", () => {
 test("setupGuide flags missing DPDFNet only on Podcast", () => {
   const missing = Model.setupGuide("podcast", false)
   assert.equal(missing.needed, true)
-  assert.match(missing.body, /omavoice\/dpdfnet/)
+  assert.match(missing.body, /Download/)
   assert.equal(Model.setupGuide("podcast", true).needed, false)
   assert.equal(Model.setupGuide("clean", false).needed, false)
   assert.equal(Model.setupGuide("natural", false).needed, false)
@@ -279,6 +279,8 @@ test("hostErrorText is one short sentence", () => {
   assert.equal(Model.hostErrorText("probe"), "Could not check audio plugins.")
   assert.equal(Model.hostErrorText("host", "omavoice-run: session PipeWire did not answer"), "PipeWire did not answer.")
   assert.equal(Model.hostErrorText("host", "can't load config /run/user/1000/omavoice/host.1.conf"), "Could not start the microphone.")
+  assert.equal(Model.hostErrorText("fetch", "tar: noise\nDownload did not match the expected checksum."), "Download did not match the expected checksum.")
+  assert.equal(Model.hostErrorText("fetch", ""), "DPDFNet download failed.")
 })
 
 test("statusText does not repeat lastError", () => {

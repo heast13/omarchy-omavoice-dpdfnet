@@ -13,7 +13,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/omarchy-4%20Quattro-0ea5e9?style=flat-square" alt="Omarchy 4 Quattro">
   <img src="https://img.shields.io/badge/pipewire-filter--chain-a3e635?style=flat-square" alt="PipeWire filter-chain">
-  <img src="https://img.shields.io/badge/version-0.5.0-111827?style=flat-square" alt="Version 0.5.0">
+  <img src="https://img.shields.io/badge/version-0.6.0-111827?style=flat-square" alt="Version 0.6.0">
 </p>
 
 <p align="center">
@@ -45,14 +45,13 @@ In the app itself, choose **Omavoice** as the microphone and turn *its* noise ca
 
 ## Install
 
-DPDFNet comes from [HushMic](https://github.com/Fovty/hushmic), which ships it as a LADSPA plugin. Install that package first, then the plugin:
-
 ```sh
-omarchy pkg aur add hushmic-bin
 omarchy plugin add https://github.com/heast13/omarchy-omavoice-dpdfnet.git --enable
 ```
 
-Omavoice only loads HushMic's plugin and model. The HushMic app itself does not need to run, and must not be the input you pick in your apps.
+Open the panel. It says **DPDFNet missing**. Click **Download DPDFNet** (or press `i`). That is it.
+
+DPDFNet comes from [HushMic](https://github.com/Fovty/hushmic), which ships it as a LADSPA plugin. The button downloads one pinned HushMic release from GitHub (62 MB, once), checks its sha256, and keeps only the four files Omavoice loads (53 MB) in `~/.local/share/omavoice/dpdfnet/`. No root, no AUR package, no HushMic app. From a terminal it is `scripts/omavoice-fetch` in the plugin folder.
 
 > [!IMPORTANT]
 > This fork replaces upstream Omavoice. Both publish a PipeWire source called `omavoice`, so never enable them together. Remove `gigasolo.omavoice` first.
@@ -60,9 +59,9 @@ Omavoice only loads HushMic's plugin and model. The HushMic app itself does not 
 > [!IMPORTANT]
 > Plugins run as unsandboxed code inside `omarchy-shell`. Only add repos you trust, and read the source before you enable one.
 
-### Without the HushMic package
+### With the HushMic package instead
 
-Omavoice looks in `~/.local/share/omavoice/dpdfnet/` first. You can copy these files there from a `hushmic-bin` release and uninstall the package:
+If you already use `hushmic-bin`, Omavoice finds it on its own. It looks in `~/.local/share/omavoice/dpdfnet/` first, then in the package paths. The folder holds:
 
 ```
 libdpdfnet_ladspa.so            # /usr/lib/ladspa/
@@ -71,7 +70,7 @@ dpdfnet8_48khz_hr.weights.f32   # /usr/share/hushmic/models/ (optional: faster n
 libonnxruntime.so               # /usr/lib/hushmic/libonnxruntime.so.1.*, renamed
 ```
 
-Copy all of them from the same release. Without DPDFNet, Denoise falls back to the Natural chain, and the panel says **DPDFNet missing**. Click **reload** after installing or copying.
+Copy all of them from the same release if you fill the folder by hand. Without DPDFNet, Denoise falls back to the Natural chain, and the panel says **DPDFNet missing**. Click **reload** after installing or copying.
 
 Softer / Balanced / Stronger cap the suppression at 24 / 48 / 100 dB. DPDFNet adds about 40 ms of latency.
 
@@ -83,6 +82,7 @@ Softer / Balanced / Stronger cap the suppression at 24 / 48 / 100 dB. DPDFNet ad
 | Tune Denoise | Settings on MODE: Voice look, then Softer / Balanced / Stronger |
 | Automatic microphone | AUTOMATIC on the MICROPHONE header |
 | Toggle Omavoice | Right-click, or `o` |
+| Download DPDFNet | The button under **DPDFNet missing**, or `i` |
 | Reload processing | Reload next to on/off, or `r` |
 | Denoise / Natural / Clean | `d` / `n` / `c` |
 | Move | Arrow keys or `h` `j` `k` `l` |
@@ -125,7 +125,7 @@ omarchy plugin list | grep omavoice
 omarchy plugin enable heast13.omavoice-dpdfnet --section right
 ```
 
-**The panel says DPDFNet missing.** Install `hushmic-bin`, or check the files in `~/.local/share/omavoice/dpdfnet/`, then **reload**.
+**The panel says DPDFNet missing.** Click **Download DPDFNet**. If the download fails, the panel says why. Or install `hushmic-bin`, then **reload**.
 
 **Omavoice is silent.** WirePlumber remembers a mute on the source. Check `pactl get-source-mute omavoice`. If it is not muted, the DPDFNet files may not match: the plugin emits silence when ONNX Runtime or the model fails to load. Copy all files from the same HushMic release.
 
@@ -149,7 +149,7 @@ That runs the Model tests, the graph and script tests, and `omarchy plugin valid
 - [DPDFNet](https://github.com/ceva-ip/DPDFNet) by Ceva (Apache-2.0): the speech-enhancement model ([paper](https://arxiv.org/abs/2512.16420)).
 - [HushMic](https://github.com/Fovty/hushmic) by Fovty (MIT OR Apache-2.0): the LADSPA plugin, the native engine, and the bundled ONNX Runtime (Microsoft, MIT).
 
-This repo contains no binaries, models, or weights. They come from your HushMic install.
+This repo contains no binaries, models, or weights. The download button fetches them from HushMic's own GitHub release.
 
 ## Changelog
 
