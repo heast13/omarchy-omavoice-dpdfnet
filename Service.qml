@@ -87,6 +87,7 @@ Item {
   readonly property string preset: Model.normalizePreset(setting("preset", "podcast"))
   readonly property string quality: Model.normalizeQuality(setting("podcastQuality", "better"))
   readonly property string dpModel: Model.normalizeModel(setting("dpModel", "auto"))
+  readonly property bool highpass: setting("highpass", true) !== false
   // Realtime only matters for DPDFNet; ask for rtkit there.
   readonly property bool rtkitNeeded: probed && !haveRtkit && preset === "podcast" && haveDpdfnet
   readonly property string pinnedSource: String(setting("pinnedSource", "") || "")
@@ -235,7 +236,7 @@ Item {
     promoted = false
     hostStartedAt = Date.now()
     hostProcess.running = false
-    var args = [scriptPath("omavoice-run"), "--preset", preset, "--quality", quality, "--model", dpModel, "--capture-gain-db", String(captureGainDb), "--output-gain-db", String(outputGainDb), "--target", targetName, "--dir", pluginDir]
+    var args = [scriptPath("omavoice-run"), "--preset", preset, "--quality", quality, "--model", dpModel, "--highpass", highpass ? "on" : "off", "--capture-gain-db", String(captureGainDb), "--output-gain-db", String(outputGainDb), "--target", targetName, "--dir", pluginDir]
     if (eqCurve) {
       args.push("--eq", eqCurve)
       args.push("--eq-body-db", String(eqTrim.body))
@@ -270,9 +271,10 @@ Item {
     var args = [scriptPath("omavoice-ctl"), "set"]
     if (preset === "podcast" && haveDpdfnet)
       args.push("denoise:Attenuation Limit (dB)", String(Model.dpAttenuation(quality)))
+    // Every mode has the hp node, Clean too.
+    args.push("hp:Freq", String(Model.hpFreq(highpass, eqCurve)))
     if (eqCurve) {
       var bands = eqBands
-      args.push("hp:Freq", String(bands.hpHz))
       args.push("eq_body:Gain", String(bands.body))
       args.push("eq_pres:Gain", String(bands.pres))
       args.push("eq_air:Gain", String(bands.air))
@@ -422,6 +424,10 @@ Item {
     rtkitWatch.restart()
   }
 
+  function setHighpass(on) {
+    persist({ highpass: on === true })
+  }
+
   function setModel(value) {
     persist({ dpModel: Model.normalizeModel(value) })
   }
@@ -450,6 +456,7 @@ Item {
   onHaveDpdfnetChanged: { hostKey = ""; syncHost() }
   onDpModelChanged: { busyReason = "model"; hostAttempts = 0; syncHost() }
   onQualityChanged: applyLiveControls()
+  onHighpassChanged: applyLiveControls()
   onEqCurveChanged: applyLiveControls()
   onEqBodyDbChanged: applyLiveControls()
   onEqPresDbChanged: applyLiveControls()

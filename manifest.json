@@ -35,6 +35,7 @@
       "setDefaultSource": true,
       "podcastQuality": "better",
       "dpModel": "auto",
+      "highpass": true,
       "podcastEq": "clear",
       "podcastEqBodyDb": 0,
       "podcastEqPresenceDb": 0,
@@ -90,6 +91,12 @@
           "best"
         ],
         "defaultValue": "better"
+      },
+      {
+        "key": "highpass",
+        "type": "boolean",
+        "label": "High-pass filter on",
+        "defaultValue": true
       },
       {
         "key": "dpModel",

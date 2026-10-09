@@ -221,4 +221,14 @@ fi
 echo "$podcast" | grep -A1 'libpipewire-module-rt' | grep -q 'rt.prio = 88' \
   || fail "module-rt needs PipeWire's own args, or rtkit hands out a 0 µs cap"
 
+hp_line() { local conf; conf=$(dump "$@"); grep -A4 'name = hp' <<<"$conf"; }
+for preset in podcast natural clean; do
+  [[ $(hp_line $preset --highpass off) == *'"Freq" = 10.0'* ]] \
+    || fail "$preset --highpass off must drop the corner to 10 Hz"
+done
+[[ $(hp_line podcast --eq bright --highpass on) == *'"Freq" = 100.0'* ]] \
+  || fail "--highpass on must keep the look's corner"
+[[ $(hp_line clean --highpass bogus) == *'"Freq" = 80.0'* ]] \
+  || fail "an unknown --highpass must stay on"
+
 echo "dump.test: ok"

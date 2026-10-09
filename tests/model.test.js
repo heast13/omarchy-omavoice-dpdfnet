@@ -376,3 +376,13 @@ test("normalizeModel keeps Auto, Large and Small", () => {
   assert.equal(Model.modelLabel("small"), "Small")
   assert.match(Model.modelHint("auto"), /steps down/)
 })
+
+test("hpFreq follows the look, off is a 10 Hz corner", () => {
+  assert.equal(Model.hpFreq(true, "clear"), 80)
+  assert.equal(Model.hpFreq(true, "bright"), 100)
+  assert.equal(Model.hpFreq(true, ""), 80)
+  assert.equal(Model.hpFreq(false, "bright"), 10)
+  assert.equal(Model.HP_OFF_HZ, 10)
+  assert.match(Model.hpHint(true, "bright"), /100 Hz/)
+  assert.match(Model.hpHint(false, "clear"), /^Off/)
+})

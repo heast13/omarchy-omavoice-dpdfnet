@@ -735,7 +735,7 @@ Panel {
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
                 iconText: "󰒓"
-                tooltipText: "Voice, Strength and Model"
+                tooltipText: "Voice, High-pass, Strength and Model"
                 foreground: root.foreground
                 fontFamily: root.fontFamily
                 onClicked: root.showTune(true)
@@ -1189,6 +1189,45 @@ Panel {
                 onMoved: function(v) { root.previewEqBand("air", v) }
                 onReleased: function(v) { root.setEqTrimDb("air", v) }
               }
+            }
+          }
+
+          Column {
+            width: parent.width
+            spacing: Style.space(8)
+
+            Item {
+              width: parent.width
+              implicitHeight: Math.max(hpTitle.implicitHeight, hpSwitch.implicitHeight)
+
+              Text {
+                id: hpTitle
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                text: "High-pass"
+                color: root.foreground
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.subtitle
+                font.bold: true
+              }
+
+              ToggleSwitch {
+                id: hpSwitch
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                checked: service.highpass
+                foreground: root.foreground
+                onToggled: service.setHighpass(!service.highpass)
+              }
+            }
+
+            Text {
+              width: parent.width
+              text: Model.hpHint(service.highpass, service.eqCurve)
+              color: root.dim
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.caption
+              wrapMode: Text.WordWrap
             }
           }
 

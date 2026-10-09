@@ -7,6 +7,7 @@ set -euo pipefail
 preset="podcast"
 quality="better"
 model="auto"
+highpass="on"
 capture_gain_db=0
 output_gain_db=0
 eq_opt=""
@@ -19,7 +20,7 @@ dump=0
 runtime_dir="${XDG_RUNTIME_DIR:-/tmp}/omavoice"
 
 usage() {
-  echo "Usage: omavoice-run [--dump] --preset podcast|natural|clean [--quality good|better|best] [--model auto|large|small] [--eq neutral|warm|clear|bright] [--eq-body-db N] [--eq-pres-db N] [--eq-air-db N] [--capture-gain-db N] [--output-gain-db N] --target <node.name> --dir <plugin-dir>" >&2
+  echo "Usage: omavoice-run [--dump] --preset podcast|natural|clean [--quality good|better|best] [--model auto|large|small] [--highpass on|off] [--eq neutral|warm|clear|bright] [--eq-body-db N] [--eq-pres-db N] [--eq-air-db N] [--capture-gain-db N] [--output-gain-db N] --target <node.name> --dir <plugin-dir>" >&2
   exit 2
 }
 
@@ -32,6 +33,7 @@ while [[ $# -gt 0 ]]; do
     --preset) preset="${2:-}"; shift 2 ;;
     --quality) quality="${2:-}"; shift 2 ;;
     --model) model="${2:-}"; shift 2 ;;
+    --highpass) highpass="${2:-}"; shift 2 ;;
     --eq) eq_opt="${2:-}"; shift 2 ;;
     --eq-body-db) eq_body_db="${2:-0}"; shift 2 ;;
     --eq-pres-db) eq_pres_db="${2:-0}"; shift 2 ;;
@@ -51,6 +53,7 @@ done
 [[ $preset == podcast || $preset == natural || $preset == clean ]] || usage
 [[ $quality == good || $quality == better || $quality == best ]] || quality=better
 [[ $model == auto || $model == large || $model == small ]] || model=auto
+[[ $highpass == off ]] || highpass=on
 
 # DPDFNet: the local copy first, else HushMic's system install. The plugin
 # reads its model and ONNX Runtime paths from the env of the pipewire host.
@@ -360,6 +363,11 @@ case $eq_curve in
   clear) eq_body_gain=-2.5; eq_pres_gain=2.0 ;;
   bright) hp_freq=100.0; eq_pres_gain=1.0; eq_air_gain=2.5 ;;
 esac
+# Off keeps the node so the switch stays live: 10 Hz only removes DC.
+# Must match Model.HP_OFF_HZ.
+if [[ $highpass == off ]]; then
+  hp_freq=10.0
+fi
 
 clamp_eq_trim() {
   awk -v n="${1:-0}" 'BEGIN {

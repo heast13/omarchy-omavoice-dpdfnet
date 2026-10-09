@@ -4,6 +4,9 @@ var NODE_DESCRIPTION = "Omavoice"
 var PRESETS = ["podcast", "natural", "clean"]
 var QUALITIES = ["good", "better", "best"]
 var MODELS = ["auto", "large", "small"]
+// High-pass "off" is a 10 Hz corner, not a missing node, so the switch
+// writes live without a host restart. Must match omavoice-run.
+var HP_OFF_HZ = 10
 var EQ_CURVES = ["neutral", "warm", "clear", "bright"]
 
 // The stored key stays "podcast"; the UI calls that mode Denoise.
@@ -335,6 +338,17 @@ function eqBandGains(curve, trim) {
   }
 }
 
+// Clean has no Voice look and keeps the default 80 Hz corner.
+function hpFreq(on, curve) {
+  if (on === false) return HP_OFF_HZ
+  return curve ? eqCurveParams(curve).hpHz : 80
+}
+
+function hpHint(on, curve) {
+  if (on === false) return "Off. Rumble, wind and desk bumps pass through."
+  return "Cuts rumble below " + hpFreq(true, curve) + " Hz."
+}
+
 function eqBandBase(curve, band) {
   var c = eqCurveParams(curve)
   if (band === "pres") return c.pres
@@ -523,6 +537,9 @@ if (typeof module !== "undefined") {
     sharedGainPatch: sharedGainPatch,
     dpAttenuation: dpAttenuation,
     MODELS: MODELS,
+    HP_OFF_HZ: HP_OFF_HZ,
+    hpFreq: hpFreq,
+    hpHint: hpHint,
     normalizeModel: normalizeModel,
     modelLabel: modelLabel,
     modelHint: modelHint,
