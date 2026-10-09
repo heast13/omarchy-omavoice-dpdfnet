@@ -65,4 +65,25 @@ set -e
 [[ $old_key -eq 2 ]] || fail "RNNoise VAD key is gone and must exit 2, got $old_key"
 [[ $old_cmd -eq 2 ]] || fail "aec-sync is gone and must exit 2, got $old_cmd"
 
+# A host that never ran drops writes: report 75 and write nothing.
+cat >"$tmpdir/pw-cli" <<EOF
+#!/usr/bin/env bash
+if [[ \${1:-} == ls && \${2:-} == Node ]]; then
+  printf '\tid 11, type PipeWire:Interface:Node/3\n\t\tnode.name = "omavoice.capture"\n'
+  exit 0
+fi
+if [[ \${1:-} == info ]]; then
+  printf '*\tstate: "suspended"\n'
+  exit 0
+fi
+printf '%s\n' "\$@" > "$log"
+EOF
+rm -f "$log"
+set +e
+"$ctl" set "hp:Freq" 80 >/dev/null 2>&1
+suspended=$?
+set -e
+[[ $suspended -eq 75 ]] || fail "a suspended host must report 75, got $suspended"
+[[ ! -f $log ]] || fail "a suspended host must not get a write"
+
 echo "ctl.test: ok"

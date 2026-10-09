@@ -48,6 +48,11 @@ fi
 [[ $# -gt 0 ]] || exit 0
 (( $# % 2 == 0 )) || usage
 
+# A host that has not processed yet drops Props writes. Say so (75) so the
+# caller can restart it with the new values instead.
+state=$(pw-cli info "$id" 2>/dev/null | grep -m1 -oE 'state: "[a-z]+"' || true)
+[[ $state == 'state: "suspended"' ]] && exit 75
+
 params=""
 numeric='^[0-9eE.+-]+$'
 while [[ $# -gt 0 ]]; do

@@ -24,6 +24,8 @@ Item {
   property string targetLabel: ""
 
   property string hostKey: ""
+  // The live values the running host was started with (its conf).
+  property string hostLiveSnapshot: ""
   property var sources: []
   property bool promoted: false
   property bool meterHoldWanted: false
@@ -234,6 +236,7 @@ Item {
     meterHoldTarget = ""
     hostAttempts += 1
     hostKey = key
+    hostLiveSnapshot = JSON.stringify(liveControlArgs())
     promoted = false
     hostStartedAt = Date.now()
     hostProcess.running = false
@@ -267,9 +270,8 @@ Item {
     eqPreview = false
   }
 
-  function writeLiveControls() {
-    if (!root.active || !enabled) return
-    var args = [scriptPath("omavoice-ctl"), "set"]
+  function liveControlArgs() {
+    var args = []
     if (preset === "podcast" && haveDpdfnet)
       args.push("denoise:Attenuation Limit (dB)", String(Model.dpAttenuation(quality)))
     // Every mode has the hp node, Clean too.
@@ -284,7 +286,14 @@ Item {
       args.push("eq_pres:Gain", String(bands.pres))
       args.push("eq_air:Gain", String(bands.air))
     }
-    liveCtlProcess.command = args
+    return args
+  }
+
+  function writeLiveControls() {
+    if (!root.active || !enabled) return
+    var live = liveControlArgs()
+    liveCtlProcess.sent = JSON.stringify(live)
+    liveCtlProcess.command = [scriptPath("omavoice-ctl"), "set"].concat(live)
     if (liveCtlProcess.running) liveCtlProcess.running = false
     liveCtlProcess.running = true
   }
@@ -544,6 +553,18 @@ Item {
 
   Process {
     id: liveCtlProcess
+    property string sent: ""
+    // 75: the host has not run yet and PipeWire drops control writes until
+    // it does. Nobody is listening, so a restart with the new values is
+    // silent. Values the host already has need no restart (no loop after
+    // the write that follows every start).
+    onExited: function(exitCode) {
+      if (exitCode !== 75 || !root.active || !root.enabled) return
+      if (sent === root.hostLiveSnapshot) return
+      root.hostKey = ""
+      root.hostAttempts = 0
+      root.syncHost()
+    }
   }
 
   Timer {
