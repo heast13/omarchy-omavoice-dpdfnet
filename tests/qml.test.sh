@@ -194,7 +194,7 @@ grep -q 'busyReason === "target"' "$root/Panel.qml" || fail "selected mic row mu
 grep -q 'Switching microphone' "$root/Model.js" || fail "mic switch copy must name the duck"
 grep -q 'Reloading' "$root/Model.js" || fail "reload copy must name the duck"
 grep -q 'function showTune' "$root/Panel.qml" || fail "preset settings must flip to a tune page"
-grep -q 'id: presetTuneButton' "$root/Panel.qml" || fail "PRESET needs a settings action"
+grep -q 'id: presetTuneButton' "$root/Panel.qml" || fail "MODE needs a settings action"
 grep -q 'id: presetRow' "$root/Panel.qml" || fail "preset chips must live in presetRow"
 grep -A12 'id: presetRow' "$root/Panel.qml" | grep -q 'HoverHandler' || fail "preset hover must clear when the cursor leaves the chips"
 grep -q 'id: sourceList' "$root/Panel.qml" || fail "mic rows must live in sourceList"

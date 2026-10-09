@@ -25,7 +25,7 @@ An independent [MIT](LICENSE)-licensed plugin by [GigaSolo](https://github.com/g
 
 ---
 
-## Presets
+## Modes
 
 | | Podcast | Clean |
 | --- | --- | --- |
@@ -33,7 +33,7 @@ An independent [MIT](LICENSE)-licensed plugin by [GigaSolo](https://github.com/g
 | **Does** | High-pass + DPDFNet + voice EQ + compressor | High-pass only |
 | **Keeps** | Speech that sounds finished | Applause, keys, and music |
 
-Right-click the mark to toggle. Open the panel to switch presets and pick a microphone. The selected mic row shows a live level and a hairline of what Omavoice is sending. Other rows stay quiet so a Bluetooth headset is not grabbed. PRESET tune sets a Voice look (Neutral / Warm / Clear / Bright) with Body / Presence / Air knobs, and the Denoise strength. On Clean, Voice is visible and disabled.
+Right-click the mark to toggle. Open the panel to switch the mode and pick a microphone. The selected mic row shows a live level and a hairline of what Omavoice is sending. Other rows stay quiet so a Bluetooth headset is not grabbed. MODE settings set a Voice look (Neutral / Warm / Clear / Bright) with Body / Presence / Air knobs, and the Denoise strength. On Clean, Voice is visible and disabled.
 
 In the app itself, choose **Omavoice** as the microphone and turn *its* noise cancellation off. Two denoisers stacked sound hollow.
 
@@ -70,7 +70,7 @@ Do not symlink the checkout into `~/.config/omarchy/plugins` — Omarchy refuses
 | Action | How |
 | --- | --- |
 | Open or close the panel | Left-click the mark |
-| Tune Podcast | Settings on PRESET: Voice look, then Softer / Balanced / Stronger |
+| Tune Podcast | Settings on MODE: Voice look, then Softer / Balanced / Stronger |
 | Automatic microphone | AUTOMATIC on the MICROPHONE header |
 | Toggle Omavoice | Right-click, or `o` |
 | Reload processing | Reload next to on/off, or `r` |

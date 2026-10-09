@@ -687,7 +687,7 @@ Panel {
                 anchors.right: presetTuneButton.left
                 anchors.rightMargin: Style.space(8)
                 anchors.verticalCenter: parent.verticalCenter
-                text: "PRESET"
+                text: "MODE"
                 foreground: root.foreground
                 fontFamily: root.fontFamily
               }
@@ -1004,7 +1004,7 @@ Panel {
               anchors.verticalCenter: parent.verticalCenter
               spacing: Style.space(3)
               Text {
-                text: "PRESET"
+                text: "MODE"
                 color: root.foreground
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.title
