@@ -32,14 +32,14 @@ odd=$?
 set -e
 [[ $odd -eq 2 ]] || fail "odd argc must exit 2, got $odd"
 
-"$ctl" set "preamp:Gain 1" 2.0 "denoise:VAD Threshold (%)" 80
+"$ctl" set "preamp:Gain 1" 2.0 "denoise:Attenuation Limit (dB)" 48
 [[ -f $log ]] || fail "pw-cli was not invoked"
 mapfile -t args < "$log"
 [[ ${args[0]} == s ]] || fail "pw-cli must set-param, got ${args[0]:-}"
 [[ ${args[1]} == 11 ]] || fail "must target omavoice.capture id 11, got ${args[1]:-}"
 [[ ${args[2]} == Props ]] || fail "must write Props, got ${args[2]:-}"
 [[ ${args[3]} == *'"preamp:Gain 1"'* ]] || fail "must quote preamp:Gain 1: ${args[3]:-}"
-[[ ${args[3]} == *'"denoise:VAD Threshold (%)"'* ]] || fail "must quote VAD key: ${args[3]:-}"
+[[ ${args[3]} == *'"denoise:Attenuation Limit (dB)"'* ]] || fail "must quote the DPDFNet key: ${args[3]:-}"
 [[ ${args[3]} != *' id 10 '* && ${args[1]} != 10 ]] || fail "must not target published omavoice"
 
 rm -f -- "$log"
@@ -56,20 +56,13 @@ set -e
 [[ $bad_val -eq 2 ]] || fail "non-numeric value must exit 2, got $bad_val"
 [[ $bad_key -eq 2 ]] || fail "unknown key must exit 2, got $bad_key"
 
-cat >"$tmpdir/pw-dump" <<'EOF'
-#!/usr/bin/env bash
-cat <<'JSON'
-[{"type":"PipeWire:Interface:Link","id":"0; touch /tmp/omavoice-pwned","info":{"props":{"link.output.node":3,"link.input.node":2}}},
- {"type":"PipeWire:Interface:Node","id":1,"info":{"props":{"node.name":"omavoice"}}},
- {"type":"PipeWire:Interface:Node","id":2,"info":{"props":{"node.name":"omavoice.aec.sink"}}},
- {"type":"PipeWire:Interface:Node","id":3,"info":{"props":{"node.name":"alsa_output.pci-Speaker"}}}]
-JSON
-EOF
-chmod +x "$tmpdir/pw-dump"
-
-rm -f -- "$log" /tmp/omavoice-pwned
-"$ctl" aec-sync
-[[ -f /tmp/omavoice-pwned ]] && fail "dirty pw-dump id must not reach the shell"
-[[ -f $log ]] && fail "non-integer link id must not call pw-cli destroy"
+set +e
+"$ctl" set --id 11 "denoise:VAD Threshold (%)" 80 >/dev/null 2>&1
+old_key=$?
+"$ctl" aec-sync >/dev/null 2>&1
+old_cmd=$?
+set -e
+[[ $old_key -eq 2 ]] || fail "RNNoise VAD key is gone and must exit 2, got $old_key"
+[[ $old_cmd -eq 2 ]] || fail "aec-sync is gone and must exit 2, got $old_cmd"
 
 echo "ctl.test: ok"

@@ -19,11 +19,12 @@ const omavoice = {
   description: "Omavoice"
 }
 
-test("normalizePreset falls back to meeting", () => {
+test("normalizePreset falls back to podcast, also for the old meeting", () => {
   assert.equal(Model.normalizePreset("podcast"), "podcast")
   assert.equal(Model.normalizePreset("CLEAN"), "clean")
-  assert.equal(Model.normalizePreset("nope"), "meeting")
-  assert.equal(Model.normalizePreset(""), "meeting")
+  assert.equal(Model.normalizePreset("meeting"), "podcast")
+  assert.equal(Model.normalizePreset("nope"), "podcast")
+  assert.equal(Model.normalizePreset(""), "podcast")
 })
 
 test("isOmavoiceNode matches name or description when name is still unbound", () => {
@@ -146,10 +147,9 @@ test("eqCurveParams matches the 0.3 voice table", () => {
 test("eqCurveForPreset maps old Presence/Air looks and defaults Clear on Podcast", () => {
   assert.equal(Model.normalizeEqCurve("presence"), "clear")
   assert.equal(Model.normalizeEqCurve("air"), "bright")
-  assert.equal(Model.eqCurveForPreset("meeting", {}), "warm")
   assert.equal(Model.eqCurveForPreset("podcast", {}), "clear")
-  assert.equal(Model.eqCurveForPreset("clean", { meetingEq: "bright" }), "")
-  assert.equal(Model.eqCurveForPreset("meeting", { meetingEq: "air" }), "bright")
+  assert.equal(Model.eqCurveForPreset("clean", { podcastEq: "bright" }), "")
+  assert.equal(Model.eqCurveForPreset("podcast", { podcastEq: "air" }), "bright")
   assert.equal(Model.eqCurveForPreset("podcast", { podcastEq: "presence" }), "clear")
 })
 
@@ -165,21 +165,17 @@ test("eqBandGains adds trim and clamps to 12 dB", () => {
 })
 
 test("Clean ignores voice EQ trim", () => {
-  const trim = Model.eqTrimForPreset("clean", { meetingEqBodyDb: 4, podcastEqBodyDb: 3 })
+  const trim = Model.eqTrimForPreset("clean", { podcastEqBodyDb: 3 })
   assert.deepEqual(trim, { body: 0, pres: 0, air: 0 })
 })
 
-test("eqTrimForPreset reads only the active preset schema keys", () => {
-  assert.deepEqual(
-    Model.eqTrimForPreset("meeting", { meetingEqBodyDb: 4, podcastEqBodyDb: 3, podcastEqPresenceDb: 2 }),
-    { body: 4, pres: 0, air: 0 }
-  )
+test("eqTrimForPreset reads the podcast schema keys", () => {
   assert.deepEqual(
     Model.eqTrimForPreset("podcast", { meetingEqBodyDb: 4, podcastEqPresenceDb: 2, podcastEqAirDb: -1 }),
     { body: 0, pres: 2, air: -1 }
   )
-  assert.equal(Model.eqTrimForPreset("meeting", { meetingEqBodyDb: 9 }).body, 6)
-  assert.equal(Model.eqTrimForPreset("meeting", { meetingEqPresenceDb: "nope" }).pres, 0)
+  assert.equal(Model.eqTrimForPreset("podcast", { podcastEqBodyDb: 9 }).body, 6)
+  assert.equal(Model.eqTrimForPreset("podcast", { podcastEqPresenceDb: "nope" }).pres, 0)
 })
 
 test("eqBandRange is the look ±6 clamp for Voice writes", () => {
@@ -203,9 +199,8 @@ test("normalizeQuality defaults to better", () => {
   assert.equal(Model.qualityLabel("good"), "Softer")
   assert.equal(Model.qualityLabel("better"), "Balanced")
   assert.equal(Model.qualityLabel("best"), "Stronger")
-  assert.match(Model.qualityHint("meeting", "good"), /voice/)
-  assert.match(Model.qualityHint("meeting", "best"), /clip/)
-  assert.match(Model.qualityHint("podcast", "best"), /Heavier/)
+  assert.match(Model.qualityHint("good"), /Light/)
+  assert.match(Model.qualityHint("best"), /Heavier/)
 })
 
 test("shouldDeferSourcePick keeps the mic while PipeWire names are unbound", () => {
@@ -213,55 +208,6 @@ test("shouldDeferSourcePick keeps the mic while PipeWire names are unbound", () 
   assert.equal(Model.shouldDeferSourcePick(usb.name, false), false)
   assert.equal(Model.shouldDeferSourcePick("", true), false)
   assert.equal(Model.shouldDeferSourcePick(null, true), false)
-})
-
-test("engineForPreset uses DeepFilterNet only for podcast when present", () => {
-  assert.equal(Model.engineForPreset("clean", true, true), "clean")
-  assert.equal(Model.engineForPreset("meeting", true, true), "rnnoise")
-  assert.equal(Model.engineForPreset("podcast", true, true), "deepfilter")
-  assert.equal(Model.engineForPreset("podcast", true, false), "rnnoise")
-  assert.equal(Model.engineForPreset("meeting", false, false), "clean")
-})
-
-test("engineForPreset prefers DPDFNet for Meeting and Podcast when HushMic is installed", () => {
-  assert.equal(Model.engineForPreset("meeting", true, true, true), "dpdfnet")
-  assert.equal(Model.engineForPreset("podcast", true, true, true), "dpdfnet")
-  assert.equal(Model.engineForPreset("clean", true, true, true), "clean")
-  assert.equal(Model.engineForPreset("meeting", false, false, true), "dpdfnet")
-  assert.equal(Model.resolveEngine("meeting", "auto", true, true, true), "dpdfnet")
-  assert.equal(Model.resolveEngine("podcast", "rnnoise", true, true, true), "rnnoise")
-  assert.equal(Model.resolveEngine("meeting", "dpdfnet", true, true, false), "dpdfnet")
-  assert.equal(Model.resolveEngine("clean", "dpdfnet", true, true, true), "clean")
-  assert.equal(Model.normalizeEngine("DPDFNet"), "dpdfnet")
-  assert.equal(Model.engineLabel("dpdfnet"), "DPDFNet")
-  assert.match(Model.engineChoiceHint("dpdfnet"), /HushMic/)
-})
-
-test("setupGuide asks for HushMic when DPDFNet is picked but missing", () => {
-  const missing = Model.setupGuide("dpdfnet", true, true, "meeting", false)
-  assert.equal(missing.needed, true)
-  assert.match(missing.command, /hushmic-bin/)
-  assert.equal(Model.setupGuide("dpdfnet", true, true, "meeting", true).needed, false)
-  assert.equal(Model.setupGuide("dpdfnet", false, false, "clean", false).needed, false)
-  assert.equal(Model.setupGuide("auto", false, false, "meeting", true).needed, false)
-})
-
-test("resolveEngine honors an explicit picker and keeps Clean HPF-only", () => {
-  assert.equal(Model.normalizeEngine(""), "auto")
-  assert.equal(Model.normalizeEngine("DEEPFILTER"), "deepfilter")
-  assert.equal(Model.resolveEngine("meeting", "auto", true, true), "rnnoise")
-  assert.equal(Model.resolveEngine("podcast", "auto", true, true), "deepfilter")
-  assert.equal(Model.resolveEngine("meeting", "deepfilter", true, true), "deepfilter")
-  assert.equal(Model.resolveEngine("podcast", "rnnoise", true, true), "rnnoise")
-  assert.equal(Model.resolveEngine("meeting", "deepfilter", true, false), "deepfilter")
-  assert.equal(Model.resolveEngine("clean", "deepfilter", true, true), "clean")
-  assert.equal(Model.resolveEngine("clean", "auto", true, true), "clean")
-})
-
-test("engine copy names the picker tips", () => {
-  assert.match(Model.engineChoiceHint("auto"), /Meeting/)
-  assert.match(Model.engineChoiceHint("rnnoise"), /Never stacked/)
-  assert.match(Model.engineChoiceHint("deepfilter"), /Heavier/)
 })
 
 test("clampGainDb and gainDbToLinear convert output trim", () => {
@@ -280,56 +226,40 @@ test("clampGainDb and gainDbToLinear convert output trim", () => {
   assert.equal(Model.snapGainDb(-1.24), -1)
   assert.equal(Model.snapGainDb(20), 12)
   const all = {
-    meetingOutputGainDb: 1,
     podcastOutputGainDb: 2,
     cleanOutputGainDb: 3,
-    meetingCaptureGainDb: 4,
     podcastCaptureGainDb: 5,
     cleanCaptureGainDb: 6
   }
-  assert.equal(Model.outputGainDbForPreset("meeting", all), 1)
   assert.equal(Model.outputGainDbForPreset("podcast", all), 2)
   assert.equal(Model.outputGainDbForPreset("clean", all), 3)
-  assert.equal(Model.captureGainDbForPreset("meeting", all), 4)
+  assert.equal(Model.captureGainDbForPreset("podcast", all), 5)
   assert.equal(Model.outputGainDbForPreset("podcast", { outputGainDb: 7, ...all }), 7)
   assert.equal(Model.captureGainDbForPreset("clean", { captureGainDb: -1, ...all }), -1)
-  assert.equal(Model.outputGainDbForPreset("meeting", { outputGainDb: 2 }), 2)
   assert.equal(Model.outputGainDbForPreset("podcast", { outputGainDb: 2 }), 2)
   assert.equal(Model.outputGainDbForPreset("clean", { outputGainDb: 2 }), 2)
   assert.equal(Model.outputGainDbForPreset("clean", {}), 0)
   assert.deepEqual(Model.sharedGainPatch("output", 2), {
     outputGainDb: 2,
-    meetingOutputGainDb: 2,
     podcastOutputGainDb: 2,
     cleanOutputGainDb: 2
   })
-  assert.equal(Model.sharedGainPatch("capture", 1.24).meetingCaptureGainDb, 1)
+  assert.equal(Model.sharedGainPatch("capture", 1.24).podcastCaptureGainDb, 1)
 })
 
-test("qualityParams matches the dump VAD / DFN tables", () => {
-  assert.deepEqual(Model.qualityParams("meeting", "better"), { vad: 80.0, grace: 400, dfn: 70, dp: 48 })
-  assert.deepEqual(Model.qualityParams("meeting", "good"), { vad: 70.0, grace: 500, dfn: 50, dp: 24 })
-  assert.deepEqual(Model.qualityParams("meeting", "best"), { vad: 85.0, grace: 250, dfn: 85, dp: 100 })
-  assert.deepEqual(Model.qualityParams("podcast", "better"), { vad: 85.0, grace: 200, dfn: 70, dp: 48 })
-  assert.deepEqual(Model.qualityParams("podcast", "good"), { vad: 75.0, grace: 400, dfn: 50, dp: 24 })
-  assert.deepEqual(Model.qualityParams("podcast", "best"), { vad: 90.0, grace: 150, dfn: 85, dp: 100 })
+test("dpAttenuation matches the dump DPDFNet caps", () => {
+  assert.equal(Model.dpAttenuation("good"), 24)
+  assert.equal(Model.dpAttenuation("better"), 48)
+  assert.equal(Model.dpAttenuation("best"), 100)
+  assert.equal(Model.dpAttenuation("nope"), 48)
 })
 
-test("setupGuide asks for the chosen engine when the plugin is missing", () => {
-  const missingRn = Model.setupGuide("auto", false, false, "meeting")
-  assert.equal(missingRn.needed, true)
-  assert.match(missingRn.command, /noise-suppression-for-voice/)
-  assert.equal(Model.setupGuide("auto", true, false, "meeting").needed, false)
-  assert.equal(Model.setupGuide("auto", false, false, "clean").needed, false)
-  assert.equal(Model.setupGuide("auto", false, true, "podcast").needed, false)
-  const missingDfn = Model.setupGuide("deepfilter", true, false, "meeting")
-  assert.equal(missingDfn.needed, true)
-  assert.match(missingDfn.command, /libdeep_filter_ladspa-bin/)
-  const missingForcedRn = Model.setupGuide("rnnoise", false, true, "podcast")
-  assert.equal(missingForcedRn.needed, true)
-  assert.match(missingForcedRn.command, /noise-suppression-for-voice/)
-  assert.equal(Model.setupGuide("rnnoise", false, false, "clean").needed, false)
-  assert.equal(Model.setupGuide("deepfilter", false, false, "clean").needed, false)
+test("setupGuide flags missing DPDFNet only on Podcast", () => {
+  const missing = Model.setupGuide("podcast", false)
+  assert.equal(missing.needed, true)
+  assert.match(missing.body, /omavoice\/dpdfnet/)
+  assert.equal(Model.setupGuide("podcast", true).needed, false)
+  assert.equal(Model.setupGuide("clean", false).needed, false)
 })
 
 test("hostErrorText is one short sentence", () => {
@@ -350,29 +280,29 @@ test("statusText does not repeat lastError", () => {
   assert.equal(text.includes("Could not start"), false)
 })
 
-test("statusText does not report a missing engine on Clean", () => {
+test("statusText does not report missing DPDFNet on Clean", () => {
   const text = Model.statusText({
     enabled: true,
     running: true,
     setupNeeded: true,
-    setupHero: "Install RNNoise",
+    setupHero: "DPDFNet missing",
     preset: "clean",
     targetName: usb.name,
     targetLabel: usb.description
   })
   assert.match(text, /Clean/)
-  assert.equal(text.includes("Install RNNoise"), false)
+  assert.equal(text.includes("DPDFNet missing"), false)
 })
 
 test("statusText reports the live preset and device", () => {
   const text = Model.statusText({
     enabled: true,
     running: true,
-    preset: "meeting",
+    preset: "podcast",
     targetName: usb.name,
     targetLabel: usb.description
   })
-  assert.match(text, /Meeting/)
+  assert.match(text, /Podcast/)
   assert.match(text, /QUALCOMM/)
 })
 
@@ -387,10 +317,9 @@ test("statusText names the preset while the host is starting", () => {
   assert.equal(text, "Starting Podcast…")
 })
 
-test("statusText names the duck: engine, mic, reload", () => {
-  assert.equal(Model.busyStatusText("engine", "meeting", "deepfilter"), "Starting DeepFilterNet…")
-  assert.equal(Model.busyStatusText("target", "meeting", "auto"), "Switching microphone…")
-  assert.equal(Model.busyStatusText("reload", "meeting", "auto"), "Reloading…")
+test("statusText names the duck: mic, reload", () => {
+  assert.equal(Model.busyStatusText("target", "podcast"), "Switching microphone…")
+  assert.equal(Model.busyStatusText("reload", "podcast"), "Reloading…")
   assert.equal(Model.statusText({
     enabled: true,
     running: true,
@@ -400,12 +329,11 @@ test("statusText names the duck: engine, mic, reload", () => {
   }), "Starting Clean…")
 })
 
-test("hostSwitchReason prefers preset over engine", () => {
-  const prev = "meeting\0rnnoise\0mic\0/dir"
-  const next = "podcast\0deepfilter\0mic\0/dir"
+test("hostSwitchReason prefers preset over target", () => {
+  const prev = "podcast\0mic\0/dir"
+  const next = "clean\0usb\0/dir"
   assert.equal(Model.hostSwitchReason(prev, next, false), "preset")
-  assert.equal(Model.hostSwitchReason(prev, "meeting\0deepfilter\0mic\0/dir", false), "engine")
-  assert.equal(Model.hostSwitchReason(prev, "meeting\0rnnoise\0usb\0/dir", false), "target")
+  assert.equal(Model.hostSwitchReason(prev, "podcast\0usb\0/dir", false), "target")
   assert.equal(Model.hostSwitchReason(prev, next, true), "reload")
   assert.equal(Model.hostSwitchReason("", next, false), "start")
 })

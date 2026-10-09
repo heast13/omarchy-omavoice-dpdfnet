@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Your voice, better heard.</strong><br>
-  A virtual microphone for Zoom, Meet, and OBS. One source. Three presets. Noise and echo stay on this side of the call.
+  A virtual microphone with DPDFNet noise suppression. One source. Two presets. Noise stays on this side of the recording.
 </p>
 
 <p align="center">
@@ -16,12 +16,10 @@
   <img src="https://img.shields.io/badge/version-0.3.2-111827?style=flat-square" alt="Version 0.3.2">
 </p>
 
-<p align="center">
-  <img src="preview.png" alt="Omavoice panel: Meeting, Podcast, Clean, selected mic with Before and After meters" width="380">
-  <img src="docs/preview-tune.png" alt="Preset tuning: engine picker, Voice looks, Body / Presence / Air, Softer / Balanced / Stronger" width="380">
-</p>
+> [!NOTE]
+> Local build (`0.3.2-dpdfnet.2`): Meeting, echo cancel, RNNoise, DeepFilterNet and the engine picker are removed. Podcast always runs DPDFNet. The screenshots still show the upstream 0.3.2 panel.
 
-Pick **Omavoice** in Zoom, Google Meet, OBS, or a browser. The plugin sits under those apps as a PipeWire source, so you do not configure each one. USB mics attach themselves when you plug them in.
+Pick **Omavoice** in OBS, a browser, or a call app. The plugin sits under those apps as a PipeWire source, so you do not configure each one. USB mics attach themselves when you plug them in.
 
 An independent [MIT](LICENSE)-licensed plugin by [GigaSolo](https://github.com/gigasolo) for [Omarchy](https://omarchy.org/) 4 (Quattro). Not affiliated with or endorsed by 37signals.
 
@@ -29,35 +27,32 @@ An independent [MIT](LICENSE)-licensed plugin by [GigaSolo](https://github.com/g
 
 ## Presets
 
-| | Meeting | Podcast | Clean |
-| --- | --- | --- | --- |
-| **For** | Zoom, Meet, Teams | OBS, interviews, local record | Program mixes, music beds |
-| **Does** | Monitor-mode AEC + denoise + compressor | High-pass + denoise + compressor | High-pass only |
-| **Keeps** | Your voice on a laptop with speakers | Speech that sounds finished | Applause, keys, and music |
+| | Podcast | Clean |
+| --- | --- | --- |
+| **For** | OBS, interviews, calls, local record | Program mixes, music beds |
+| **Does** | High-pass + DPDFNet + voice EQ + compressor | High-pass only |
+| **Keeps** | Speech that sounds finished | Applause, keys, and music |
 
-Right-click the mark to toggle. Open the panel to switch presets and pick a microphone. The selected mic row shows a live level and a hairline of what Omavoice is sending. Other rows stay quiet so a Bluetooth headset is not grabbed. PRESET tune picks the denoise engine, a Voice look (Neutral / Warm / Clear / Bright) with Body / Presence / Air knobs, and shows which engine is running. On Clean, Voice is visible and disabled.
+Right-click the mark to toggle. Open the panel to switch presets and pick a microphone. The selected mic row shows a live level and a hairline of what Omavoice is sending. Other rows stay quiet so a Bluetooth headset is not grabbed. PRESET tune sets a Voice look (Neutral / Warm / Clear / Bright) with Body / Presence / Air knobs, and the Denoise strength. On Clean, Voice is visible and disabled.
 
 In the app itself, choose **Omavoice** as the microphone and turn *its* noise cancellation off. Two denoisers stacked sound hollow.
 
+## DPDFNet
+
+DPDFNet (Ceva, a DeepFilterNet2 descendant) runs as a LADSPA plugin. Omavoice loads these four files from `~/.local/share/omavoice/dpdfnet/`:
+
+```
+libdpdfnet_ladspa.so            # plugin, from HushMic
+dpdfnet8_48khz_hr.onnx          # model
+dpdfnet8_48khz_hr.weights.f32   # native int8 / fp32 weights
+libonnxruntime.so               # ONNX Runtime the plugin was built against
+```
+
+If that folder is incomplete, Omavoice falls back to a system install of `hushmic-bin`. Without either, Podcast is high-pass only and the panel says **DPDFNet missing**. Copy the files, then click **reload**.
+
+Softer / Balanced / Stronger cap the suppression at 24 / 48 / 100 dB. DPDFNet adds about 40 ms of latency.
+
 ## Install
-
-```sh
-omarchy pkg add noise-suppression-for-voice
-omarchy plugin add https://github.com/gigasolo/omavoice.git --enable
-```
-
-Omarchy may ask which side of the bar to use. The default is the right.
-
-> [!IMPORTANT]
-> Plugins run as unsandboxed code inside `omarchy-shell`. Only add repos you trust, and [read the source](https://github.com/gigasolo/omavoice) before you enable one.
-
-Without `--enable`, the plugin is cloned and left off so you can review it first:
-
-```sh
-omarchy plugin add https://github.com/gigasolo/omavoice.git
-less ~/.config/omarchy/plugins/gigasolo.omavoice/README.md
-omarchy plugin enable gigasolo.omavoice --section right
-```
 
 From a local checkout:
 
@@ -67,32 +62,19 @@ omarchy plugin add "$PWD" --enable
 
 Do not symlink the checkout into `~/.config/omarchy/plugins` — Omarchy refuses plugins that contain symlinks.
 
-### Optional DeepFilterNet engine
-
-```sh
-omarchy pkg aur add libdeep_filter_ladspa-bin
-```
-
-### Optional DPDFNet engine
-
-```sh
-omarchy pkg aur add hushmic-bin
-```
-
-DPDFNet (Ceva, a DeepFilterNet2 descendant) comes as a LADSPA plugin with HushMic. Omavoice only loads the plugin; the HushMic app does not need to run. When it is installed, **Auto** uses DPDFNet for Meeting and Podcast. It adds about 40 ms of latency.
-
-**Auto** without DPDFNet keeps today’s policy: Meeting uses RNNoise, Podcast uses DeepFilterNet3 when that plugin is present (otherwise RNNoise), Clean is high-pass only. On the PRESET tune page you can pin **RNNoise**, **DeepFilterNet** or **DPDFNet** instead. The engines never stack. If the chosen engine is missing, the panel shows the install command; click **reload** next to on/off after installing. You do not restart the shell.
+> [!IMPORTANT]
+> Plugins run as unsandboxed code inside `omarchy-shell`. Only add repos you trust.
 
 ## Use
 
 | Action | How |
 | --- | --- |
 | Open or close the panel | Left-click the mark |
-| Tune a preset | Settings on PRESET: engine, Voice look, then Softer / Balanced / Stronger |
+| Tune Podcast | Settings on PRESET: Voice look, then Softer / Balanced / Stronger |
 | Automatic microphone | AUTOMATIC on the MICROPHONE header |
 | Toggle Omavoice | Right-click, or `o` |
 | Reload processing | Reload next to on/off, or `r` |
-| Meeting / Podcast / Clean | `m` / `p` / `c` |
+| Podcast / Clean | `p` / `c` |
 | Move | Arrow keys or `h` `j` `k` `l` |
 | Activate | Enter |
 | Close | Escape |
@@ -106,17 +88,13 @@ USB / laptop / BT mic
         │
         ▼
   Omavoice  (pipewire -c, its own client)
-   Meeting · Podcast · Clean
+   Podcast · Clean
         │
         ▼
-  Zoom · Meet · OBS · browser
+  OBS · browser · call app
 ```
 
-The host is a dedicated PipeWire client, the same isolation Omarchy uses for speaker tuning. It does not write into that tuning, and it does not load stock `filter-chain.conf.d`. Disable the plugin and the chain stops.
-
-## While it's running
-
-Meeting echo cancel can use CPU while a call is capturing Omavoice, because it monitors the default sink (speakers or headphones). With no listener the host suspends. Disable the plugin to stop it. Restore goes back to the microphone Omavoice replaced, not to Omavoice itself.
+The host is a dedicated PipeWire client, the same isolation Omarchy uses for speaker tuning. It does not write into that tuning, and it does not load stock `filter-chain.conf.d`. Disable the plugin and the chain stops. With no listener the host suspends. Restore goes back to the microphone Omavoice replaced, not to Omavoice itself.
 
 ## Update and remove
 
@@ -136,17 +114,17 @@ omarchy plugin list | grep omavoice
 omarchy plugin enable gigasolo.omavoice --section right
 ```
 
-**The panel asks for RNNoise or DeepFilterNet.** Run the command on the setup row (`omarchy pkg add noise-suppression-for-voice` or `omarchy pkg aur add libdeep_filter_ladspa-bin`), then **reload**.
+**The panel says DPDFNet missing.** Check the four files in `~/.local/share/omavoice/dpdfnet/`, then **reload**.
 
-**The app still hears the raw USB mic.** Select **Omavoice** inside Zoom / Meet / OBS, not the hardware device.
+**Omavoice is silent.** WirePlumber remembers a mute on the source. Check `pactl get-source-mute omavoice`.
 
-**The voice sounds hollow.** The call app is probably denoising too. Turn that off.
+**The app still hears the raw USB mic.** Select **Omavoice** inside the app, not the hardware device.
+
+**The voice sounds hollow.** The app is probably denoising too. Turn that off.
 
 ## Develop
 
 ```sh
-git clone https://github.com/gigasolo/omavoice.git
-cd omavoice
 ./tests/run
 ```
 

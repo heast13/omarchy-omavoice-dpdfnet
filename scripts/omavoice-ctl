@@ -1,61 +1,15 @@
 #!/usr/bin/env bash
-# Live Props on omavoice.capture, and tear down classic AEC sink links.
-# Meeting AEC is monitor.mode only: never play the default sink into
-# omavoice.aec.sink (that loops far-end audio back to the call).
+# Live Props on omavoice.capture.
 set -euo pipefail
 
 usage() {
-  echo "Usage: omavoice-ctl set [--id N] [KEY VALUE ...] | aec-sync" >&2
+  echo "Usage: omavoice-ctl set [--id N] [KEY VALUE ...]" >&2
   exit 2
 }
 
 cmd=${1:-}
 [[ -n $cmd ]] || usage
 shift
-
-if [[ $cmd == aec-sync ]]; then
-  exec python3 - <<'PY'
-import json, subprocess, sys
-
-data = json.loads(subprocess.check_output(["pw-dump"]))
-names = {}
-for obj in data:
-    props = (obj.get("info") or {}).get("props") or {}
-    names[obj.get("id")] = props.get("node.name")
-
-voice = next((i for i, n in names.items() if n == "omavoice"), None)
-sink = next((i for i, n in names.items() if n == "omavoice.aec.sink"), None)
-if voice is None or sink is None:
-    sys.exit(0)
-
-ignore = {"omavoice.meter.hold", "quickshell"}
-real = False
-sink_links = []
-for obj in data:
-    if obj.get("type") != "PipeWire:Interface:Link":
-        continue
-    props = (obj.get("info") or {}).get("props") or {}
-    src, dst = props.get("link.output.node"), props.get("link.input.node")
-    if src == voice:
-        dest = names.get(dst) or ""
-        if dest not in ignore:
-            real = True
-    if dst == sink:
-        sink_links.append(obj.get("id"))
-
-# monitor.mode already reads the default sink monitor. Never play that
-# sink into omavoice.aec.sink — that is the classic AEC path and loops
-# far-end audio into the call. Leave monitor.mode's links alone while a
-# real client is capturing; only drop sink links when idle.
-if real:
-    sys.exit(0)
-
-for link_id in sink_links:
-    if isinstance(link_id, bool) or not isinstance(link_id, int) or link_id < 0:
-        continue
-    subprocess.call(["pw-cli", "destroy", str(link_id)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-PY
-fi
 
 [[ $cmd == set ]] || usage
 
@@ -71,7 +25,7 @@ node_id() {
 allowed_key() {
   case $1 in
     "preamp:Gain 1"|"outgain:Gain 1"|"hp:Freq"|"eq_body:Gain"|"eq_pres:Gain"|"eq_air:Gain") return 0 ;;
-    "denoise:VAD Threshold (%)"|"denoise:VAD Grace Period (ms)"|"denoise:Attenuation Limit (dB)") return 0 ;;
+    "denoise:Attenuation Limit (dB)") return 0 ;;
     *) return 1 ;;
   esac
 }

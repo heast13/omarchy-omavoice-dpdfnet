@@ -13,10 +13,7 @@ Item {
   property bool active: true
 
   property bool probed: false
-  property bool haveRnnoise: false
-  property bool haveDeepfilter: false
   property bool haveDpdfnet: false
-  property bool haveWebrtc: false
   property string lastError: ""
   property string actionStatus: ""
   property string targetName: ""
@@ -82,16 +79,12 @@ Item {
 
   readonly property string pluginDir: manifest && manifest.__sourceDir ? String(manifest.__sourceDir) : Qt.resolvedUrl(".").toString().replace(/^file:\/\//, "").replace(/\/$/, "")
   readonly property bool enabled: setting("enabled", true) !== false
-  readonly property string preset: Model.normalizePreset(setting("preset", "meeting"))
-  readonly property string meetingQuality: Model.normalizeQuality(setting("meetingQuality", "better"))
-  readonly property string podcastQuality: Model.normalizeQuality(setting("podcastQuality", "better"))
-  readonly property string quality: preset === "podcast" ? podcastQuality : meetingQuality
+  readonly property string preset: Model.normalizePreset(setting("preset", "podcast"))
+  readonly property string quality: Model.normalizeQuality(setting("podcastQuality", "better"))
   readonly property string pinnedSource: String(setting("pinnedSource", "") || "")
   readonly property string previousAudioSource: String(setting("previousAudioSource", "") || "")
   readonly property bool setDefaultSource: setting("setDefaultSource", true) !== false
-  readonly property string engineSetting: Model.normalizeEngine(setting("engine", "auto"))
-  readonly property string engine: Model.resolveEngine(preset, engineSetting, haveRnnoise, haveDeepfilter, haveDpdfnet)
-  readonly property var setup: Model.setupGuide(engineSetting, haveRnnoise, haveDeepfilter, preset, haveDpdfnet)
+  readonly property var setup: Model.setupGuide(preset, haveDpdfnet)
   readonly property bool setupNeeded: setup.needed
   readonly property real outputGainDb: Model.outputGainDbForPreset(preset, settings)
   readonly property real captureGainDb: Model.captureGainDbForPreset(preset, settings)
@@ -113,7 +106,6 @@ Item {
     setupNeeded: setupNeeded,
     setupHero: setup.hero,
     preset: preset,
-    engineSetting: engineSetting,
     targetName: targetName,
     targetLabel: targetLabel,
     lastError: lastError
@@ -218,7 +210,7 @@ Item {
       if (!lastError) lastError = Model.hostErrorText("bind")
       return
     }
-    var key = preset + "\0" + engine + "\0" + targetName + "\0" + pluginDir
+    var key = preset + "\0" + targetName + "\0" + pluginDir
     if (hostProcess.running && hostKey === key) return
     busyReason = Model.hostSwitchReason(hostKey, key, reloading)
     if (meterHoldProcess.running) meterHoldProcess.running = false
@@ -228,7 +220,7 @@ Item {
     promoted = false
     hostStartedAt = Date.now()
     hostProcess.running = false
-    var args = [scriptPath("omavoice-run"), "--preset", preset, "--quality", quality, "--engine", engine, "--capture-gain-db", String(captureGainDb), "--output-gain-db", String(outputGainDb), "--target", targetName, "--dir", pluginDir]
+    var args = [scriptPath("omavoice-run"), "--preset", preset, "--quality", quality, "--capture-gain-db", String(captureGainDb), "--output-gain-db", String(outputGainDb), "--target", targetName, "--dir", pluginDir]
     if (eqCurve) {
       args.push("--eq", eqCurve)
       args.push("--eq-body-db", String(eqTrim.body))
@@ -261,15 +253,8 @@ Item {
   function writeLiveControls() {
     if (!root.active || !enabled) return
     var args = [scriptPath("omavoice-ctl"), "set"]
-    var qp = Model.qualityParams(preset, quality)
-    if (engine === "rnnoise") {
-      args.push("denoise:VAD Threshold (%)", String(qp.vad))
-      args.push("denoise:VAD Grace Period (ms)", String(qp.grace))
-    } else if (engine === "deepfilter") {
-      args.push("denoise:Attenuation Limit (dB)", String(qp.dfn))
-    } else if (engine === "dpdfnet") {
-      args.push("denoise:Attenuation Limit (dB)", String(qp.dp))
-    }
+    if (preset === "podcast" && haveDpdfnet)
+      args.push("denoise:Attenuation Limit (dB)", String(Model.dpAttenuation(quality)))
     if (eqCurve) {
       var bands = eqBands
       args.push("hp:Freq", String(bands.hpHz))
@@ -328,14 +313,6 @@ Item {
   function setMeterHold(on) {
     meterHoldWanted = on === true
     syncMeterHold()
-    aecSyncDebounce.restart()
-  }
-
-  function syncAecMonitor() {
-    if (!root.active || !enabled || preset !== "meeting" || !afterNodeName) return
-    // monitor.mode is the echo reference. Do not play the default sink
-    // into omavoice.aec.sink — that loops far-end audio into the call.
-    Quickshell.execDetached([scriptPath("omavoice-ctl"), "aec-sync"])
   }
 
   function syncMeterHold() {
@@ -412,8 +389,8 @@ Item {
     probeProcess.running = true
   }
 
-  // Re-scan LADSPA plugins and rebuild the chain. Needed after installing
-  // RNNoise, DeepFilterNet or DPDFNet without restarting the shell.
+  // Re-scan for DPDFNet and rebuild the chain. Needed after copying its
+  // files without restarting the shell.
   function reload() {
     reloading = true
     busyReason = "reload"
@@ -433,11 +410,7 @@ Item {
     syncHost()
   }
   onPresetChanged: { busyReason = "preset"; hostAttempts = 0; syncHost() }
-  onEngineChanged: {
-    if (busyReason !== "preset" && busyReason !== "reload") busyReason = "engine"
-    hostAttempts = 0
-    syncHost()
-  }
+  onHaveDpdfnetChanged: { hostKey = ""; syncHost() }
   onQualityChanged: applyLiveControls()
   onEqCurveChanged: applyLiveControls()
   onEqBodyDbChanged: applyLiveControls()
@@ -445,12 +418,9 @@ Item {
   onEqAirDbChanged: applyLiveControls()
   onProbedChanged: if (probed) syncHost()
   onPinnedSourceChanged: refreshSources()
-  onNodesChanged: {
-    refreshSources()
-    aecSyncDebounce.restart()
-  }
+  onNodesChanged: refreshSources()
   onTargetNameChanged: {
-    if (busyReason !== "preset" && busyReason !== "engine" && busyReason !== "reload")
+    if (busyReason !== "preset" && busyReason !== "reload")
       busyReason = "target"
     hostAttempts = 0
     syncHost()
@@ -458,11 +428,10 @@ Item {
   onAfterNodeChanged: syncMeterHold()
   onAfterNodeNameChanged: {
     syncMeterHold()
-    aecSyncDebounce.restart()
     if (afterNodeName) {
       lastError = ""
       hostAttempts = 0
-      var key = preset + "\0" + engine + "\0" + targetName + "\0" + pluginDir
+      var key = preset + "\0" + targetName + "\0" + pluginDir
       if (hostKey === key) {
         busyReason = ""
         reloading = false
@@ -523,13 +492,6 @@ Item {
   }
 
   Timer {
-    id: aecSyncDebounce
-    interval: 500
-    repeat: false
-    onTriggered: root.syncAecMonitor()
-  }
-
-  Timer {
     interval: 750
     running: root.active && root.hasUnboundNodes
     repeat: true
@@ -554,16 +516,10 @@ Item {
       onStreamFinished: {
         try {
           var data = JSON.parse(text)
-          haveRnnoise = data.rnnoise === true
-          haveDeepfilter = data.deepfilter === true
           haveDpdfnet = data.dpdfnet === true
-          haveWebrtc = data.webrtc === true
           lastError = ""
         } catch (e) {
-          haveRnnoise = false
-          haveDeepfilter = false
           haveDpdfnet = false
-          haveWebrtc = false
           lastError = Model.hostErrorText("probe")
           root.reloading = false
         }

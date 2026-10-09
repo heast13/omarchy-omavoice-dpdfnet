@@ -17,7 +17,6 @@ Panel {
   property string focusSection: "header"
   property int sourceIndex: 0
   property int presetIndex: 0
-  property int engineIndex: 0
   property int eqIndex: 0
   property bool cursorActive: false
   property int phraseIndex: 0
@@ -44,7 +43,6 @@ Panel {
   Component.onCompleted: pushSettings()
 
   readonly property var presets: [
-    { value: "meeting", label: "Meeting", hint: "Zoom, Meet, Teams" },
     { value: "podcast", label: "Podcast", hint: "OBS, record, interviews" },
     { value: "clean", label: "Clean", hint: "High-pass only" }
   ]
@@ -76,8 +74,7 @@ Panel {
   readonly property var activePhrases: [
     "Clearing the room",
     "Hushing the fans",
-    "Catching the voice",
-    "Cutting the echo"
+    "Catching the voice"
   ]
   readonly property string heroPhraseText: {
     if (service.lastError !== "") return "Couldn't start"
@@ -138,10 +135,6 @@ Panel {
     persistSettings({ setDefaultSource: !service.setDefaultSource })
   }
 
-  function setMeetingQuality(value) {
-    persistSettings({ meetingQuality: Model.normalizeQuality(value) })
-  }
-
   function setPodcastQuality(value) {
     persistSettings({ podcastQuality: Model.normalizeQuality(value) })
   }
@@ -151,13 +144,9 @@ Panel {
     return (n > 0 ? "+" : "") + n.toFixed(1)
   }
 
-  function setEngine(value) {
-    persistSettings({ engine: Model.normalizeEngine(value) })
-  }
-
   function setEqCurve(value) {
     if (service.preset === "clean") return
-    var prefix = service.preset === "podcast" ? "podcastEq" : "meetingEq"
+    var prefix = "podcastEq"
     var patch = {}
     patch[prefix] = Model.normalizeEqCurve(value, "neutral")
     patch[prefix + "BodyDb"] = 0
@@ -175,7 +164,7 @@ Panel {
   function setEqTrimDb(band, value) {
     if (service.preset === "clean") return
     var trim = Model.snapEqTrimDb(Model.snapEqBandDb(service.eqCurve || "neutral", band, value) - eqCurveBase(band))
-    var prefix = service.preset === "podcast" ? "podcastEq" : "meetingEq"
+    var prefix = "podcastEq"
     var key = prefix + "BodyDb"
     if (band === "pres") key = prefix + "PresenceDb"
     else if (band === "air") key = prefix + "AirDb"
@@ -196,7 +185,6 @@ Panel {
 
   component QualitySlider: Column {
     required property string title
-    required property string preset
     required property string quality
     signal chosen(string value)
 
@@ -213,7 +201,7 @@ Panel {
 
     Text {
       width: parent.width
-      text: Model.qualityHint(preset, quality)
+      text: Model.qualityHint(quality)
       color: root.dim
       font.family: root.fontFamily
       font.pixelSize: Style.font.caption
@@ -375,7 +363,7 @@ Panel {
     ensureCursor()
     if (dy === 0) return
     var sections = ["header", "presets", "sources"]
-    if (setup.needed) sections.push("setup")
+    if (setup.needed && setup.command) sections.push("setup")
     var idx = sections.indexOf(focusSection)
     if (idx < 0) idx = 0
     if (focusSection === "presets" && dx !== 0) {
@@ -520,8 +508,7 @@ Panel {
       onTabRequested: function(direction) { root.switchPanel(direction) }
       onTextKey: function(t) {
         if (root.tuneOpen) return
-        if (t === "m" || t === "M") root.choosePreset("meeting")
-        else if (t === "p" || t === "P") root.choosePreset("podcast")
+        if (t === "p" || t === "P") root.choosePreset("podcast")
         else if (t === "c" || t === "C") root.choosePreset("clean")
         else if (t === "o" || t === "O") root.toggleEnabled()
         else if (t === "r" || t === "R") {
@@ -655,6 +642,7 @@ Panel {
             }
 
             CursorSurface {
+              visible: root.setup.command !== ""
               width: parent.width
               implicitHeight: setupRow.implicitHeight + Style.spacing.rowPaddingX
               hasCursor: root.cursorActive && root.focusSection === "setup"
@@ -709,7 +697,7 @@ Panel {
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
                 iconText: "󰒓"
-                tooltipText: "Tune Meeting and Podcast"
+                tooltipText: "Tune Podcast"
                 foreground: root.foreground
                 fontFamily: root.fontFamily
                 onClicked: root.showTune(true)
@@ -731,7 +719,7 @@ Panel {
                   required property var modelData
                   required property int index
                   readonly property bool isCurrent: service.preset === modelData.value
-                  width: Math.floor((parent.width - Style.space(6) * 2) / 3)
+                  width: Math.floor((parent.width - Style.space(6)) / 2)
                   implicitHeight: Style.space(36)
                   hasCursor: root.cursorActive && root.focusSection === "presets" && root.presetIndex === index
                   foreground: root.foreground
@@ -1040,94 +1028,6 @@ Panel {
             width: parent.width
             spacing: Style.space(8)
 
-            Text {
-              text: "Engine"
-              color: root.foreground
-              font.family: root.fontFamily
-              font.pixelSize: Style.font.subtitle
-              font.bold: true
-            }
-
-            Row {
-              id: engineRow
-              width: parent.width
-              spacing: Style.space(6)
-
-              HoverHandler {
-                onHoveredChanged: root.setChipHover("engine", hovered)
-              }
-
-              Repeater {
-                model: [
-                  { value: "auto", label: "Auto" },
-                  { value: "rnnoise", label: "RNNoise" },
-                  { value: "deepfilter", label: "DeepFilterNet" },
-                  { value: "dpdfnet", label: "DPDFNet" }
-                ]
-                CursorSurface {
-                  required property var modelData
-                  required property int index
-                  readonly property bool isCurrent: service.engineSetting === modelData.value
-                  width: Math.floor((parent.width - Style.space(6) * 3) / 4)
-                  implicitHeight: Style.space(32)
-                  hasCursor: root.cursorActive && root.focusSection === "engine" && root.engineIndex === index
-                  foreground: root.foreground
-                  opacity: isCurrent && service.busyReason === "engine" ? 0.55 : 1
-                  Behavior on opacity { NumberAnimation { duration: 120 } }
-                  MouseArea {
-                    id: engineHit
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onEntered: {
-                      root.cursorActive = true
-                      root.focusSection = "engine"
-                      root.engineIndex = index
-                    }
-                    onClicked: root.setEngine(modelData.value)
-                  }
-                  PanelToolTip {
-                    visible: engineHit.containsMouse
-                    text: Model.engineChoiceHint(modelData.value)
-                    fontFamily: root.fontFamily
-                  }
-                  Rectangle {
-                    anchors.fill: parent
-                    radius: Style.cornerRadius
-                    color: isCurrent
-                      ? (bar ? Style.selectedFillFor(bar.foreground, Color.accent) : Color.accent)
-                      : "transparent"
-                    border.width: 1
-                    border.color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.18)
-                  }
-                  Text {
-                    anchors.centerIn: parent
-                    text: modelData.label
-                    color: root.foreground
-                    font.family: root.fontFamily
-                    font.pixelSize: Style.font.caption
-                    font.bold: isCurrent
-                  }
-                  Rectangle {
-                    visible: service.engineSetting === "auto" && service.engine === modelData.value
-                    width: Style.space(6)
-                    height: Style.space(6)
-                    radius: width / 2
-                    color: root.foreground
-                    anchors.top: parent.top
-                    anchors.right: parent.right
-                    anchors.topMargin: Style.space(6)
-                    anchors.rightMargin: Style.space(6)
-                  }
-                }
-              }
-            }
-          }
-
-          Column {
-            width: parent.width
-            spacing: Style.space(8)
-
             Item {
               width: parent.width
               implicitHeight: Math.max(voiceTitle.implicitHeight, voiceDisabled.implicitHeight)
@@ -1255,16 +1155,8 @@ Panel {
           }
 
           QualitySlider {
-            title: "Meeting"
-            preset: "meeting"
-            quality: service.meetingQuality
-            onChosen: function(value) { root.setMeetingQuality(value) }
-          }
-
-          QualitySlider {
-            title: "Podcast"
-            preset: "podcast"
-            quality: service.podcastQuality
+            title: "Denoise"
+            quality: service.quality
             onChosen: function(value) { root.setPodcastQuality(value) }
           }
         }

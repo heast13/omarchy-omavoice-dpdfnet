@@ -7,6 +7,24 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+## [0.3.2-dpdfnet.2] — 2026-10-09
+
+Local build: DPDFNet only.
+
+### Removed
+
+- **Meeting** preset, WebRTC echo cancel and `omavoice-ctl aec-sync`.
+- **RNNoise** and **DeepFilterNet** engines, the engine picker and **Auto**.
+- `ROADMAP.md` and `docs/audit-0.2.md`; both described the removed parts.
+
+### Changed
+
+- Podcast always runs DPDFNet. Without it, Podcast is high-pass only and
+  the panel says **DPDFNet missing**.
+- DPDFNet loads from `~/.local/share/omavoice/dpdfnet`, else from a system
+  `hushmic-bin`.
+- A stored `meeting` preset falls back to Podcast.
+
 ## [0.3.2-dpdfnet.1] — 2026-10-09
 
 Local build: DPDFNet as a third denoise engine.

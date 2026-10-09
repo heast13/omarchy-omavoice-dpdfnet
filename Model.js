@@ -1,15 +1,14 @@
 var NODE_NAME = "omavoice"
 var CAPTURE_NAME = "omavoice.capture"
 var NODE_DESCRIPTION = "Omavoice"
-var PRESETS = ["meeting", "podcast", "clean"]
+var PRESETS = ["podcast", "clean"]
 var QUALITIES = ["good", "better", "best"]
-var ENGINES = ["auto", "rnnoise", "deepfilter", "dpdfnet"]
 var EQ_CURVES = ["neutral", "warm", "clear", "bright"]
 
 function normalizePreset(value) {
   var preset = String(value || "").toLowerCase()
   if (PRESETS.indexOf(preset) >= 0) return preset
-  return "meeting"
+  return "podcast"
 }
 
 function normalizeQuality(value) {
@@ -36,17 +35,11 @@ function qualityLabel(value) {
   return "Balanced"
 }
 
-function qualityHint(preset, quality) {
-  var kind = normalizePreset(preset)
+function qualityHint(quality) {
   var level = normalizeQuality(quality)
-  if (kind === "podcast") {
-    if (level === "good") return "Light denoise. More of the room stays."
-    if (level === "best") return "Heavier denoise. Less air, less noise."
-    return "Speech that sounds finished."
-  }
-  if (level === "good") return "More of your voice. Some room stays."
-  if (level === "best") return "Quieter room. May clip a word ending."
-  return "Echo and noise cut for calls."
+  if (level === "good") return "Light denoise. More of the room stays."
+  if (level === "best") return "Heavier denoise. Less air, less noise."
+  return "Speech that sounds finished."
 }
 
 function isOmavoiceName(name) {
@@ -209,72 +202,26 @@ function restoreCaptureName(pinnedName, previousName, sources) {
 }
 
 function presetLabel(preset) {
-  var value = normalizePreset(preset)
-  if (value === "podcast") return "Podcast"
-  if (value === "clean") return "Clean"
-  return "Meeting"
+  if (normalizePreset(preset) === "clean") return "Clean"
+  return "Podcast"
 }
 
 function presetHint(preset) {
-  var value = normalizePreset(preset)
-  if (value === "podcast") return "Denoise, gate-like VAD, speech presence"
-  if (value === "clean") return "High-pass only — keeps music and program"
-  return "Echo cancel and RNNoise for calls"
-}
-
-function normalizeEngine(value) {
-  var engine = String(value || "").toLowerCase()
-  if (ENGINES.indexOf(engine) >= 0) return engine
-  return "auto"
-}
-
-function engineForPreset(preset, haveRnnoise, haveDeepfilter, haveDpdfnet) {
-  var value = normalizePreset(preset)
-  if (value === "clean") return "clean"
-  if (haveDpdfnet) return "dpdfnet"
-  if (value === "podcast" && haveDeepfilter) return "deepfilter"
-  if (haveRnnoise) return "rnnoise"
-  return "clean"
-}
-
-function resolveEngine(preset, engineSetting, haveRnnoise, haveDeepfilter, haveDpdfnet) {
-  var kind = normalizePreset(preset)
-  if (kind === "clean") return "clean"
-  var want = normalizeEngine(engineSetting)
-  if (want === "rnnoise" || want === "deepfilter" || want === "dpdfnet") return want
-  return engineForPreset(kind, haveRnnoise, haveDeepfilter, haveDpdfnet)
-}
-
-function engineChoiceHint(value) {
-  var want = normalizeEngine(value)
-  if (want === "rnnoise") return "Neural denoise. Never stacked with DeepFilterNet."
-  if (want === "deepfilter") return "Heavier denoise. Never stacked with RNNoise."
-  if (want === "dpdfnet") return "DPDFNet from HushMic. Cleanest, about 40 ms later."
-  return "DPDFNet if installed. Else Meeting: RNNoise, Podcast: DeepFilterNet. Clean: none."
-}
-
-function engineLabel(engine) {
-  var want = String(engine || "")
-  if (want === "deepfilter") return "DeepFilterNet"
-  if (want === "dpdfnet") return "DPDFNet"
-  if (want === "rnnoise") return "RNNoise"
-  if (want === "clean") return "Clean"
-  return "Auto"
+  if (normalizePreset(preset) === "clean") return "High-pass only — keeps music and program"
+  return "DPDFNet denoise, voice EQ, compressor"
 }
 
 function hostSwitchReason(prevKey, nextKey, reloading) {
   if (reloading) return "reload"
   var old = String(prevKey || "").split("\0")
   var neu = String(nextKey || "").split("\0")
-  if (!old[0] || old.length < 4) return "start"
+  if (!old[0] || old.length < 3) return "start"
   if (old[0] !== neu[0]) return "preset"
-  if (old[1] !== neu[1]) return "engine"
-  if (old[2] !== neu[2]) return "target"
+  if (old[1] !== neu[1]) return "target"
   return "start"
 }
 
-function busyStatusText(reason, preset, engineSetting) {
-  if (reason === "engine") return "Starting " + engineLabel(engineSetting) + "…"
+function busyStatusText(reason, preset) {
   if (reason === "target") return "Switching microphone…"
   if (reason === "reload") return "Reloading…"
   return "Starting " + presetLabel(preset) + "…"
@@ -335,26 +282,16 @@ function eqCurveParams(curve) {
 
 function eqCurveForPreset(preset, values) {
   if (normalizePreset(preset) === "clean") return ""
-  var src = values || {}
-  if (normalizePreset(preset) === "podcast") return normalizeEqCurve(src.podcastEq, "clear")
-  return normalizeEqCurve(src.meetingEq, "warm")
+  return normalizeEqCurve((values || {}).podcastEq, "clear")
 }
 
 function eqTrimForPreset(preset, values) {
   var src = values || {}
-  var kind = normalizePreset(preset)
-  if (kind === "clean") return { body: 0, pres: 0, air: 0 }
-  if (kind === "podcast") {
-    return {
-      body: clampEqTrimDb(src.podcastEqBodyDb),
-      pres: clampEqTrimDb(src.podcastEqPresenceDb),
-      air: clampEqTrimDb(src.podcastEqAirDb)
-    }
-  }
+  if (normalizePreset(preset) === "clean") return { body: 0, pres: 0, air: 0 }
   return {
-    body: clampEqTrimDb(src.meetingEqBodyDb),
-    pres: clampEqTrimDb(src.meetingEqPresenceDb),
-    air: clampEqTrimDb(src.meetingEqAirDb)
+    body: clampEqTrimDb(src.podcastEqBodyDb),
+    pres: clampEqTrimDb(src.podcastEqPresenceDb),
+    air: clampEqTrimDb(src.podcastEqAirDb)
   }
 }
 
@@ -427,19 +364,13 @@ function gainDbFromKeys(src, keys) {
 }
 
 function outputGainDbForPreset(preset, values) {
-  var kind = normalizePreset(preset)
-  var first = "meetingOutputGainDb"
-  if (kind === "podcast") first = "podcastOutputGainDb"
-  else if (kind === "clean") first = "cleanOutputGainDb"
-  return gainDbFromKeys(values || {}, ["outputGainDb", first, "meetingOutputGainDb", "podcastOutputGainDb", "cleanOutputGainDb"])
+  var first = normalizePreset(preset) === "clean" ? "cleanOutputGainDb" : "podcastOutputGainDb"
+  return gainDbFromKeys(values || {}, ["outputGainDb", first, "podcastOutputGainDb", "cleanOutputGainDb"])
 }
 
 function captureGainDbForPreset(preset, values) {
-  var kind = normalizePreset(preset)
-  var first = "meetingCaptureGainDb"
-  if (kind === "podcast") first = "podcastCaptureGainDb"
-  else if (kind === "clean") first = "cleanCaptureGainDb"
-  return gainDbFromKeys(values || {}, ["captureGainDb", first, "meetingCaptureGainDb", "podcastCaptureGainDb", "cleanCaptureGainDb"])
+  var first = normalizePreset(preset) === "clean" ? "cleanCaptureGainDb" : "podcastCaptureGainDb"
+  return gainDbFromKeys(values || {}, ["captureGainDb", first, "podcastCaptureGainDb", "cleanCaptureGainDb"])
 }
 
 function sharedGainPatch(kind, db) {
@@ -447,72 +378,33 @@ function sharedGainPatch(kind, db) {
   if (kind === "capture") {
     return {
       captureGainDb: n,
-      meetingCaptureGainDb: n,
       podcastCaptureGainDb: n,
       cleanCaptureGainDb: n
     }
   }
   return {
     outputGainDb: n,
-    meetingOutputGainDb: n,
     podcastOutputGainDb: n,
     cleanOutputGainDb: n
   }
 }
 
-function qualityParams(preset, quality) {
-  var kind = normalizePreset(preset)
+// DPDFNet suppression cap in dB. Must match omavoice-run.
+function dpAttenuation(quality) {
   var level = normalizeQuality(quality)
-  if (kind === "podcast") {
-    if (level === "good") return { vad: 75.0, grace: 400, dfn: 50, dp: 24 }
-    if (level === "best") return { vad: 90.0, grace: 150, dfn: 85, dp: 100 }
-    return { vad: 85.0, grace: 200, dfn: 70, dp: 48 }
-  }
-  if (level === "good") return { vad: 70.0, grace: 500, dfn: 50, dp: 24 }
-  if (level === "best") return { vad: 85.0, grace: 250, dfn: 85, dp: 100 }
-  return { vad: 80.0, grace: 400, dfn: 70, dp: 48 }
+  if (level === "good") return 24
+  if (level === "best") return 100
+  return 48
 }
 
-function setupGuide(engine, haveRnnoise, haveDeepfilter, preset, haveDpdfnet) {
-  var kind = normalizePreset(preset)
-  var want = normalizeEngine(engine)
-  var none = { needed: false, hero: "", command: "", body: "" }
-
-  function rnnoiseRow() {
-    return {
-      needed: true,
-      hero: "Install RNNoise",
-      command: "omarchy pkg add noise-suppression-for-voice",
-      body: "This engine needs the RNNoise LADSPA plugin. Clean still works without it."
-    }
+function setupGuide(preset, haveDpdfnet) {
+  if (normalizePreset(preset) === "clean" || haveDpdfnet) return { needed: false, hero: "", command: "", body: "" }
+  return {
+    needed: true,
+    hero: "DPDFNet missing",
+    command: "",
+    body: "Copy the DPDFNet plugin, model and ONNX Runtime to ~/.local/share/omavoice/dpdfnet, then reload."
   }
-
-  function dfnRow() {
-    return {
-      needed: true,
-      hero: "Install DeepFilterNet",
-      command: "omarchy pkg aur add libdeep_filter_ladspa-bin",
-      body: "DeepFilterNet is not installed. Reload after installing it."
-    }
-  }
-
-  function dpdfnetRow() {
-    return {
-      needed: true,
-      hero: "Install DPDFNet",
-      command: "omarchy pkg aur add hushmic-bin",
-      body: "DPDFNet ships with HushMic. Reload after installing it."
-    }
-  }
-
-  if (kind === "clean") return none
-  if (want === "rnnoise") return haveRnnoise ? none : rnnoiseRow()
-  if (want === "deepfilter") return haveDeepfilter ? none : dfnRow()
-  if (want === "dpdfnet") return haveDpdfnet ? none : dpdfnetRow()
-  if (haveDpdfnet) return none
-  if (kind === "podcast" && haveDeepfilter) return none
-  if (haveRnnoise) return none
-  return rnnoiseRow()
 }
 
 function hostErrorText(kind, raw) {
@@ -529,9 +421,9 @@ function statusText(state) {
     return String(state.setupHero || "Plugin not installed")
   }
   if (!state.targetName) return "No microphone"
-  if (state.busyReason) return busyStatusText(state.busyReason, state.preset, state.engineSetting)
+  if (state.busyReason) return busyStatusText(state.busyReason, state.preset)
   if (state.running) return presetLabel(state.preset) + " · " + friendlyDeviceLabel(state.targetLabel || state.targetName)
-  if (state.busy) return busyStatusText("start", state.preset, state.engineSetting)
+  if (state.busy) return busyStatusText("start", state.preset)
   return "Idle"
 }
 
@@ -542,7 +434,6 @@ if (typeof module !== "undefined") {
     NODE_DESCRIPTION: NODE_DESCRIPTION,
     PRESETS: PRESETS,
     QUALITIES: QUALITIES,
-    ENGINES: ENGINES,
     EQ_CURVES: EQ_CURVES,
     normalizePreset: normalizePreset,
     normalizeQuality: normalizeQuality,
@@ -566,11 +457,6 @@ if (typeof module !== "undefined") {
     restoreCaptureName: restoreCaptureName,
     presetLabel: presetLabel,
     presetHint: presetHint,
-    normalizeEngine: normalizeEngine,
-    engineForPreset: engineForPreset,
-    resolveEngine: resolveEngine,
-    engineChoiceHint: engineChoiceHint,
-    engineLabel: engineLabel,
     hostSwitchReason: hostSwitchReason,
     busyStatusText: busyStatusText,
     clampGainDb: clampGainDb,
@@ -591,7 +477,7 @@ if (typeof module !== "undefined") {
     outputGainDbForPreset: outputGainDbForPreset,
     captureGainDbForPreset: captureGainDbForPreset,
     sharedGainPatch: sharedGainPatch,
-    qualityParams: qualityParams,
+    dpAttenuation: dpAttenuation,
     setupGuide: setupGuide,
     hostErrorText: hostErrorText,
     statusText: statusText

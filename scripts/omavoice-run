@@ -4,9 +4,8 @@
 # the daemon's pipewire.conf.d and never stock filter-chain.conf.d.
 set -euo pipefail
 
-preset="meeting"
+preset="podcast"
 quality="better"
-engine_opt="auto"
 capture_gain_db=0
 output_gain_db=0
 eq_opt=""
@@ -19,7 +18,7 @@ dump=0
 runtime_dir="${XDG_RUNTIME_DIR:-/tmp}/omavoice"
 
 usage() {
-  echo "Usage: omavoice-run [--dump] --preset meeting|podcast|clean [--quality good|better|best] [--engine auto|rnnoise|deepfilter|dpdfnet|clean] [--eq neutral|warm|clear|bright] [--eq-body-db N] [--eq-pres-db N] [--eq-air-db N] [--capture-gain-db N] [--output-gain-db N] --target <node.name> --dir <plugin-dir>" >&2
+  echo "Usage: omavoice-run [--dump] --preset podcast|clean [--quality good|better|best] [--eq neutral|warm|clear|bright] [--eq-body-db N] [--eq-pres-db N] [--eq-air-db N] [--capture-gain-db N] [--output-gain-db N] --target <node.name> --dir <plugin-dir>" >&2
   exit 2
 }
 
@@ -27,7 +26,6 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --preset) preset="${2:-}"; shift 2 ;;
     --quality) quality="${2:-}"; shift 2 ;;
-    --engine) engine_opt="${2:-auto}"; shift 2 ;;
     --eq) eq_opt="${2:-}"; shift 2 ;;
     --eq-body-db) eq_body_db="${2:-0}"; shift 2 ;;
     --eq-pres-db) eq_pres_db="${2:-0}"; shift 2 ;;
@@ -44,24 +42,8 @@ done
 
 [[ -n $target && -n $plugin_dir ]] || usage
 [[ $target =~ ^[A-Za-z0-9._:-]+$ ]] || usage
-[[ $preset == meeting || $preset == podcast || $preset == clean ]] || usage
+[[ $preset == podcast || $preset == clean ]] || usage
 [[ $quality == good || $quality == better || $quality == best ]] || quality=better
-
-rnnoise=""
-for candidate in /usr/lib/ladspa/librnnoise_ladspa.so /usr/lib64/ladspa/librnnoise_ladspa.so; do
-  if [[ -f $candidate ]]; then
-    rnnoise=$candidate
-    break
-  fi
-done
-
-deepfilter=""
-for candidate in /usr/lib/ladspa/libdeep_filter_ladspa.so /usr/lib64/ladspa/libdeep_filter_ladspa.so; do
-  if [[ -f $candidate ]]; then
-    deepfilter=$candidate
-    break
-  fi
-done
 
 # DPDFNet: the local copy first, else HushMic's system install. The plugin
 # reads its model and ONNX Runtime paths from the env of the pipewire host.
@@ -80,14 +62,6 @@ else
   done
 fi
 
-webrtc=""
-for candidate in /usr/lib/spa-0.2/aec/libspa-aec-webrtc.so /usr/lib64/spa-0.2/aec/libspa-aec-webrtc.so; do
-  if [[ -f $candidate ]]; then
-    webrtc=$candidate
-    break
-  fi
-done
-
 have_lsp=0
 [[ -f /usr/lib/lv2/lsp-plugins.lv2/compressor_mono.ttl && -f /usr/lib/lv2/lsp-plugins.lv2/limiter_mono.ttl ]] && have_lsp=1
 
@@ -103,29 +77,10 @@ db_to_linear() {
 preamp_gain=$(db_to_linear "$capture_gain_db")
 out_gain=$(db_to_linear "$output_gain_db")
 
+# Podcast runs DPDFNet. Without it the graph is high-pass only, like Clean.
 engine="clean"
-if [[ $preset == clean ]]; then
-  engine="clean"
-else
-  case $engine_opt in
-    rnnoise|deepfilter|dpdfnet|clean)
-      engine=$engine_opt
-      ;;
-    *)
-      if [[ -n $dpdfnet ]]; then
-        engine="dpdfnet"
-      elif [[ $preset == podcast && -n $deepfilter ]]; then
-        engine="deepfilter"
-      elif [[ -n $rnnoise ]]; then
-        engine="rnnoise"
-      fi
-      ;;
-  esac
-fi
-
-use_aec=0
-if [[ $preset == meeting && -n $webrtc ]]; then
-  use_aec=1
+if [[ $preset == podcast && -n $dpdfnet ]]; then
+  engine="dpdfnet"
 fi
 
 # --dump is for tests. Live hosts get a pid-unique conf so a remount cannot
@@ -138,26 +93,6 @@ else
   umask 077
   conf="$runtime_dir/host.$$.conf"
 fi
-capture_target=$target
-if [[ $use_aec -eq 1 ]]; then
-  capture_target="omavoice.aec"
-fi
-
-stream_props() {
-  local name=$1
-  local desc=$2
-  local klass=$3
-  local extra=${4:-}
-  cat <<EOF
-                node.name = "$name"
-                node.description = "$desc"
-                media.class = $klass
-                audio.rate = 48000
-                audio.position = [ MONO ]
-                node.latency = 256/48000
-$extra
-EOF
-}
 
 # Light makeup after NS: ~2.5:1 into a −1 dB ceiling. LSP gains are linear.
 # Attack threshold 0.251 ≈ −12 dB; makeup 2.0 ≈ +6 dB.
@@ -199,7 +134,6 @@ context.properties = {
 context.spa-libs = {
     audio.convert.* = audioconvert/libspa-audioconvert
     support.*       = support/libspa-support
-    audio.aec       = aec/libspa-aec-webrtc
 }
 
 context.modules = [
@@ -212,56 +146,8 @@ context.modules = [
     { name = libpipewire-module-adapter }
 EOF
 
-if [[ $use_aec -eq 1 ]]; then
-  cat >>"$conf" <<EOF
-    { name = libpipewire-module-echo-cancel
-        flags = [ ifexists nofail ]
-        args = {
-            library.name = aec/libspa-aec-webrtc
-            monitor.mode = true
-            aec.args = {
-                webrtc.gain_control = false
-                webrtc.extended_filter = true
-                webrtc.delay_agnostic = true
-                webrtc.noise_suppression = false
-                webrtc.high_pass_filter = true
-            }
-            source.props = {
-                node.name = "omavoice.aec"
-                node.description = "Omavoice echo cancel"
-                media.class = Stream/Output/Audio/Internal
-                node.virtual = true
-                node.dont-fallback = true
-                priority.session = 0
-                session.suspend-timeout-seconds = 3
-            }
-            capture.props = {
-                node.name = "omavoice.aec.capture"
-                node.passive = true
-                node.dont-fallback = true
-                node.linger = true
-                node.dont-move = true
-                target.object = "$target"
-                session.suspend-timeout-seconds = 3
-            }
-            playback.props = {
-                node.name = "omavoice.aec.playback"
-                node.passive = true
-                node.suspend-on-idle = true
-                session.suspend-timeout-seconds = 3
-            }
-            sink.props = {
-                node.name = "omavoice.aec.sink"
-                node.passive = true
-                session.suspend-timeout-seconds = 3
-            }
-        }
-    }
-EOF
-fi
-
 # Build the voice graph as an explicit series so PipeWire does not duplicate
-# it per channel. Mono RNNoise/DFN ports are Input/Output; LSP uses in/out.
+# it per channel. DPDFNet ports are Input/Output; LSP uses in/out.
 # nofail here keeps an empty pipewire process up with no omavoice node.
 graph_head() {
   cat <<EOF
@@ -278,10 +164,6 @@ EOF
 }
 
 graph_tail() {
-  local capture_pin=""
-  if [[ $capture_target == omavoice.aec ]]; then
-    capture_pin=$'                node.dont-fallback = true\n                node.linger = true\n                node.dont-move = true'
-  fi
   cat <<EOF
                 ]
 $1
@@ -289,11 +171,10 @@ $1
             capture.props = {
                 node.name = "omavoice.capture"
                 node.passive = true
-$capture_pin
                 audio.rate = 48000
                 audio.position = [ MONO ]
                 node.latency = 256/48000
-                target.object = "$capture_target"
+                target.object = "$target"
             }
             playback.props = {
                 node.name = "omavoice"
@@ -366,39 +247,7 @@ eq_highshelf_node() {
 EOF
 }
 
-rnnoise_node() {
-  local vad=$1 grace=$2
-  cat <<EOF
-                    {
-                        type = ladspa
-                        name = denoise
-                        plugin = "$rnnoise"
-                        label = noise_suppressor_mono
-                        control = {
-                            "VAD Threshold (%)" = $vad
-                            "VAD Grace Period (ms)" = $grace
-                            "Retroactive VAD Grace (ms)" = 0
-                        }
-                    }
-EOF
-}
-
-dfn_node() {
-  local atten=$1
-  cat <<EOF
-                    {
-                        type = ladspa
-                        name = denoise
-                        plugin = "$deepfilter"
-                        label = deep_filter_mono
-                        control = {
-                            "Attenuation Limit (dB)" = $atten
-                        }
-                    }
-EOF
-}
-
-# HushMic's DPDFNet plugin. Mode 0 = suppress. Same Input/Output ports as RNNoise.
+# HushMic's DPDFNet plugin. Mode 0 = suppress.
 dpdfnet_node() {
   local atten=$1
   cat <<EOF
@@ -415,32 +264,14 @@ dpdfnet_node() {
 EOF
 }
 
-meeting_vad=80.0
-meeting_grace=400
-podcast_vad=85.0
-podcast_grace=200
-podcast_dfn=70
+# Softer / Balanced / Stronger cap the suppression. Must match Model.dpAttenuation.
 dp_atten=48
 case $quality in
-  good)
-    meeting_vad=70.0
-    meeting_grace=500
-    podcast_vad=75.0
-    podcast_grace=400
-    podcast_dfn=50
-    dp_atten=24
-    ;;
-  best)
-    meeting_vad=85.0
-    meeting_grace=250
-    podcast_vad=90.0
-    podcast_grace=150
-    podcast_dfn=85
-    dp_atten=100
-    ;;
+  good) dp_atten=24 ;;
+  best) dp_atten=100 ;;
 esac
 
-# Must match Model.eqCurveParams. Meeting/Podcast always get hp so Neutral is HPF only.
+# Must match Model.eqCurveParams. Podcast always gets hp so Neutral is HPF only.
 eq_curve=""
 if [[ $preset != clean ]]; then
   eq_curve=$eq_opt
@@ -449,7 +280,7 @@ if [[ $preset != clean ]]; then
     air) eq_curve=bright ;;
   esac
   if [[ $eq_curve != neutral && $eq_curve != warm && $eq_curve != clear && $eq_curve != bright ]]; then
-    if [[ $preset == podcast ]]; then eq_curve=clear; else eq_curve=warm; fi
+    eq_curve=clear
   fi
 fi
 
@@ -501,19 +332,7 @@ add_link() {
     prev_out="hp:Out"
   fi
 
-  if [[ $engine == rnnoise ]]; then
-    if [[ $preset == podcast ]]; then
-      rnnoise_node $podcast_vad $podcast_grace
-    else
-      rnnoise_node $meeting_vad $meeting_grace
-    fi
-    add_link "$prev_out" "denoise:Input"
-    prev_out="denoise:Output"
-  elif [[ $engine == deepfilter ]]; then
-    dfn_node $podcast_dfn
-    add_link "$prev_out" "denoise:Audio In"
-    prev_out="denoise:Audio Out"
-  elif [[ $engine == dpdfnet ]]; then
+  if [[ $engine == dpdfnet ]]; then
     dpdfnet_node $dp_atten
     add_link "$prev_out" "denoise:Input"
     prev_out="denoise:Output"
@@ -575,7 +394,7 @@ omavoice_in_graph() {
   pw-cli ls Node 2>/dev/null | grep -Eq 'node\.name = "omavoice(|\.[A-Za-z0-9._-]+)"'
 }
 
-# Isolated pipewire is gone; session copies of omavoice.aec* can linger
+# Isolated pipewire is gone; session copies of omavoice nodes can linger
 # and block the next preset. Destroy by id, do not fail the start.
 destroy_leftover_nodes() {
   pw-dump 2>/dev/null | python3 -c '
@@ -589,7 +408,7 @@ for obj in data:
         continue
     props = (obj.get("info") or {}).get("props") or {}
     name = str(props.get("node.name") or "")
-    if name == "omavoice" or name.startswith("omavoice.aec") or name in ("omavoice.capture", "omavoice.meter.hold"):
+    if name in ("omavoice", "omavoice.capture", "omavoice.meter.hold"):
         oid = obj.get("id")
         if isinstance(oid, bool) or not isinstance(oid, int):
             continue

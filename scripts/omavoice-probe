@@ -2,17 +2,8 @@
 # Print a one-line JSON probe the QML service can parse without jq in-process.
 set -euo pipefail
 
-have_rnnoise=false
-have_deepfilter=false
-have_webrtc=false
 have_dpdfnet=false
 
-for candidate in /usr/lib/ladspa/librnnoise_ladspa.so /usr/lib64/ladspa/librnnoise_ladspa.so; do
-  [[ -f $candidate ]] && have_rnnoise=true && break
-done
-for candidate in /usr/lib/ladspa/libdeep_filter_ladspa.so /usr/lib64/ladspa/libdeep_filter_ladspa.so; do
-  [[ -f $candidate ]] && have_deepfilter=true && break
-done
 # Must match omavoice-run: the local copy, else HushMic's system install.
 dp_local="${XDG_DATA_HOME:-$HOME/.local/share}/omavoice/dpdfnet"
 if [[ -f $dp_local/libdpdfnet_ladspa.so && -f $dp_local/dpdfnet8_48khz_hr.onnx && -f $dp_local/libonnxruntime.so ]]; then
@@ -21,8 +12,5 @@ fi
 for candidate in /usr/lib/ladspa/libdpdfnet_ladspa.so /usr/lib64/ladspa/libdpdfnet_ladspa.so; do
   [[ -f $candidate && -f /usr/share/hushmic/models/dpdfnet8_48khz_hr.onnx ]] && have_dpdfnet=true && break
 done
-for candidate in /usr/lib/spa-0.2/aec/libspa-aec-webrtc.so /usr/lib64/spa-0.2/aec/libspa-aec-webrtc.so; do
-  [[ -f $candidate ]] && have_webrtc=true && break
-done
 
-printf '{"rnnoise":%s,"deepfilter":%s,"dpdfnet":%s,"webrtc":%s}\n' "$have_rnnoise" "$have_deepfilter" "$have_dpdfnet" "$have_webrtc"
+printf '{"dpdfnet":%s}\n' "$have_dpdfnet"
