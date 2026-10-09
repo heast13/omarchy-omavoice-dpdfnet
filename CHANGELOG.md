@@ -24,6 +24,8 @@ Local build: DPDFNet only.
 - DPDFNet loads from `~/.local/share/omavoice/dpdfnet`, else from a system
   `hushmic-bin`.
 - A stored `meeting` preset falls back to Podcast.
+- The PRESET section is now **MODE**, and Podcast is shown as **Enhanced**
+  (key `e`). Settings keys stay `podcast*`.
 
 ## [0.3.2-dpdfnet.1] — 2026-10-09
 

@@ -17,7 +17,7 @@
 </p>
 
 > [!NOTE]
-> Local build (`0.3.2-dpdfnet.2`): Meeting, echo cancel, RNNoise, DeepFilterNet and the engine picker are removed. Podcast always runs DPDFNet. The screenshots still show the upstream 0.3.2 panel.
+> Local build (`0.3.2-dpdfnet.2`): Meeting, echo cancel, RNNoise, DeepFilterNet and the engine picker are removed. Enhanced always runs DPDFNet. The screenshots still show the upstream 0.3.2 panel.
 
 Pick **Omavoice** in OBS, a browser, or a call app. The plugin sits under those apps as a PipeWire source, so you do not configure each one. USB mics attach themselves when you plug them in.
 
@@ -27,9 +27,9 @@ An independent [MIT](LICENSE)-licensed plugin by [GigaSolo](https://github.com/g
 
 ## Modes
 
-| | Podcast | Clean |
+| | Enhanced | Clean |
 | --- | --- | --- |
-| **For** | OBS, interviews, calls, local record | Program mixes, music beds |
+| **For** | Calls, OBS, interviews, local record | Program mixes, music beds |
 | **Does** | High-pass + DPDFNet + voice EQ + compressor | High-pass only |
 | **Keeps** | Speech that sounds finished | Applause, keys, and music |
 
@@ -48,7 +48,7 @@ dpdfnet8_48khz_hr.weights.f32   # optional: faster native engine
 libonnxruntime.so               # ONNX Runtime the plugin was built against
 ```
 
-If that folder is incomplete, Omavoice falls back to a system install of `hushmic-bin`. Without either, Podcast skips denoise and the compressor (high-pass and voice EQ stay) and the panel says **DPDFNet missing**. Copy the files, then click **reload**.
+If that folder is incomplete, Omavoice falls back to a system install of `hushmic-bin`. Without either, Enhanced skips denoise and the compressor (high-pass and voice EQ stay) and the panel says **DPDFNet missing**. Copy the files, then click **reload**.
 
 Softer / Balanced / Stronger cap the suppression at 24 / 48 / 100 dB. DPDFNet adds about 40 ms of latency.
 
@@ -70,11 +70,11 @@ Do not symlink the checkout into `~/.config/omarchy/plugins` — Omarchy refuses
 | Action | How |
 | --- | --- |
 | Open or close the panel | Left-click the mark |
-| Tune Podcast | Settings on MODE: Voice look, then Softer / Balanced / Stronger |
+| Tune Enhanced | Settings on MODE: Voice look, then Softer / Balanced / Stronger |
 | Automatic microphone | AUTOMATIC on the MICROPHONE header |
 | Toggle Omavoice | Right-click, or `o` |
 | Reload processing | Reload next to on/off, or `r` |
-| Podcast / Clean | `p` / `c` |
+| Enhanced / Clean | `e` / `c` |
 | Move | Arrow keys or `h` `j` `k` `l` |
 | Activate | Enter |
 | Close | Escape |
@@ -88,7 +88,7 @@ USB / laptop / BT mic
         │
         ▼
   Omavoice  (pipewire -c, its own client)
-   Podcast · Clean
+   Enhanced · Clean
         │
         ▼
   OBS · browser · call app

@@ -5,8 +5,10 @@ var PRESETS = ["podcast", "clean"]
 var QUALITIES = ["good", "better", "best"]
 var EQ_CURVES = ["neutral", "warm", "clear", "bright"]
 
+// The stored key stays "podcast"; the UI calls that mode Enhanced.
 function normalizePreset(value) {
   var preset = String(value || "").toLowerCase()
+  if (preset === "enhanced") return "podcast"
   if (PRESETS.indexOf(preset) >= 0) return preset
   return "podcast"
 }
@@ -203,7 +205,7 @@ function restoreCaptureName(pinnedName, previousName, sources) {
 
 function presetLabel(preset) {
   if (normalizePreset(preset) === "clean") return "Clean"
-  return "Podcast"
+  return "Enhanced"
 }
 
 function presetHint(preset) {

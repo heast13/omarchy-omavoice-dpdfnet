@@ -43,7 +43,7 @@ Panel {
   Component.onCompleted: pushSettings()
 
   readonly property var presets: [
-    { value: "podcast", label: "Podcast", hint: "OBS, record, interviews" },
+    { value: "podcast", label: "Enhanced", hint: "Calls, OBS, recording" },
     { value: "clean", label: "Clean", hint: "High-pass only" }
   ]
   readonly property var captureSources: {
@@ -500,7 +500,7 @@ Panel {
       onTabRequested: function(direction) { root.switchPanel(direction) }
       onTextKey: function(t) {
         if (root.tuneOpen) return
-        if (t === "p" || t === "P") root.choosePreset("podcast")
+        if (t === "e" || t === "E") root.choosePreset("podcast")
         else if (t === "c" || t === "C") root.choosePreset("clean")
         else if (t === "o" || t === "O") root.toggleEnabled()
         else if (t === "r" || t === "R") {
@@ -660,7 +660,7 @@ Panel {
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
                 iconText: "󰒓"
-                tooltipText: "Tune Podcast"
+                tooltipText: "Tune Enhanced"
                 foreground: root.foreground
                 fontFamily: root.fontFamily
                 onClicked: root.showTune(true)
