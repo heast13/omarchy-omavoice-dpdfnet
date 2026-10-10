@@ -8,6 +8,15 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+## [0.8.1] — 2026-10-10
+
+### Fixed
+
+- Body / Presence / Air were never saved, for every Voice look including
+  Custom: the slider row called the slider's own moved() / released() and
+  recursed until the stack overflowed. They snapped back to 0 when the panel
+  reopened. (From upstream.)
+
 ## [0.8.0] — 2026-10-10
 
 ### Added

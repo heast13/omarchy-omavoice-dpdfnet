@@ -240,6 +240,7 @@ Panel {
   }
 
   component GainRow: RowLayout {
+    id: gainRow
     required property string title
     required property real persisted
     property string hint: ""
@@ -299,11 +300,14 @@ Panel {
       maximum: parent.maximum
       step: 0.5
       value: held
-      onMoved: function(v) { moved(applyHeld(v)) }
+      // Qualified: inside PanelSlider a bare moved() / released() is the
+      // slider's own signal, which recursed until the stack overflowed and
+      // never reached the row, so Body / Presence / Air were never saved.
+      onMoved: function(v) { gainRow.moved(gainRow.applyHeld(v)) }
       onReleased: function(v) {
-        var s = lastSent
-        held = s
-        released(s)
+        var s = gainRow.lastSent
+        gainRow.held = s
+        gainRow.released(s)
       }
     }
 
