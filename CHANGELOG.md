@@ -15,6 +15,12 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   4 kHz when S sounds hit it (about -4 / -11 / -18 dB on a loud 7 kHz tone,
   500 Hz untouched). Off by default, switches live.
 
+### Changed
+
+- The settings page may grow to the screen height before it scrolls.
+- **Strength** is now called **Noise reduction**, **Model** is **Noise model**.
+  The High-pass hint moved into the switch's tooltip.
+
 ### Fixed
 
 - Settings changed before anything had listened to Omavoice since its start

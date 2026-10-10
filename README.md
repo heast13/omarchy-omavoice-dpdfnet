@@ -18,7 +18,7 @@
 
 <p align="center">
   <img src="preview.png" alt="Omavoice DPDFNet panel: Denoise, Natural and Clean, selected mic with live level" width="380">
-  <img src="docs/preview-tune.png" alt="Mode settings: Voice looks, Body / Presence / Air, Strength, Model" width="380">
+  <img src="docs/preview-tune.png" alt="Mode settings: Voice looks, Body / Presence / Air, High-pass, De-esser, Noise reduction, Noise model" width="380">
 </p>
 
 A fork of [Omavoice](https://github.com/gigasolo/omavoice) by GigaSolo for [Omarchy](https://omarchy.org/) 4 (Quattro). It swaps RNNoise and DeepFilterNet for **DPDFNet**, which cleaned speech best in a side-by-side test, and drops the rest: no Meeting preset, no echo cancel, no engine picker.
@@ -39,7 +39,7 @@ Not affiliated with or endorsed by GigaSolo, Ceva, or 37signals.
 
 Natural uses the same Voice look as Denoise, so you tune your voice once.
 
-Right-click the mark to toggle. Open the panel to switch the mode and pick a microphone. The selected mic row shows a live level and a hairline of what Omavoice is sending. Other rows stay quiet so a Bluetooth headset is not grabbed. The settings on MODE set a Voice look (Neutral / Warm / Clear / Bright / Custom) with Body / Presence / Air knobs (Custom keeps your own values when you switch looks), a High-pass switch, a De-esser (Off / Light / Medium / Strong), the Strength of the denoise, and the DPDFNet Model. High-pass works in every mode; the De-esser in Denoise and Natural; Strength and Model only apply to Denoise; on Clean, Voice is disabled too.
+Right-click the mark to toggle. Open the panel to switch the mode and pick a microphone. The selected mic row shows a live level and a hairline of what Omavoice is sending. Other rows stay quiet so a Bluetooth headset is not grabbed. The settings on MODE set a Voice look (Neutral / Warm / Clear / Bright / Custom) with Body / Presence / Air knobs (Custom keeps your own values when you switch looks), a High-pass switch, a De-esser (Off / Light / Medium / Strong), Noise reduction (how hard DPDFNet suppresses), and the Noise model. High-pass works in every mode; the De-esser in Denoise and Natural; Noise reduction and Noise model only apply to Denoise; on Clean, Voice is disabled too.
 
 In the app itself, choose **Omavoice** as the microphone and turn *its* noise cancellation off. Two denoisers stacked sound hollow.
 
@@ -74,11 +74,11 @@ libonnxruntime.so               # /usr/lib/hushmic/libonnxruntime.so.1.*, rename
 
 Copy all of them from the same release if you fill the folder by hand. Without DPDFNet, Denoise falls back to the Natural chain, and the panel says **DPDFNet missing**. Click **reload** after installing or copying.
 
-Softer / Balanced / Stronger cap the suppression at 24 / 48 / 100 dB. DPDFNet adds about 40 ms of latency.
+Noise reduction Softer / Balanced / Stronger caps the suppression at 24 / 48 / 100 dB. DPDFNet adds about 40 ms of latency.
 
-Model picks the DPDFNet network:
+Noise model picks the DPDFNet network:
 
-| Model | What it does |
+| Noise model | What it does |
 | --- | --- |
 | **Auto** (default) | Large model. When the CPU cannot keep up, it steps down to Small, and only then to unfiltered audio. |
 | **Large** | Always the large model. A CPU that cannot keep up drops out instead of letting noise through. |

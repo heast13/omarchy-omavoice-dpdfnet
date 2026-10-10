@@ -480,7 +480,8 @@ Panel {
     contentWidth: panel.fittedContentWidth(Style.space(380))
     contentHeight: panel.fittedContentHeight(
       root.tuneOpen ? tuneInner.implicitHeight + Style.space(24) : column.implicitHeight,
-      Style.space(560)
+      // The settings page is taller; the card still stops at the screen.
+      root.tuneOpen ? Style.space(800) : Style.space(560)
     )
 
     PanelKeyCatcher {
@@ -733,7 +734,7 @@ Panel {
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
                 iconText: "󰒓"
-                tooltipText: "Voice, High-pass, De-esser, Strength and Model"
+                tooltipText: "Voice, High-pass, De-esser, Noise reduction and Noise model"
                 foreground: root.foreground
                 fontFamily: root.fontFamily
                 onClicked: root.showTune(true)
@@ -1217,16 +1218,12 @@ Panel {
                 checked: service.highpass
                 foreground: root.foreground
                 onToggled: root.persistSettings({ highpass: !service.highpass })
+                PanelToolTip {
+                  visible: hpSwitch.containsMouse
+                  text: Model.hpHint(service.highpass, service.eqCurve)
+                  fontFamily: root.fontFamily
+                }
               }
-            }
-
-            Text {
-              width: parent.width
-              text: Model.hpHint(service.highpass, service.eqCurve)
-              color: root.dim
-              font.family: root.fontFamily
-              font.pixelSize: Style.font.caption
-              wrapMode: Text.WordWrap
             }
           }
 
@@ -1300,7 +1297,7 @@ Panel {
           }
 
           QualitySlider {
-            title: "Strength"
+            title: "Noise reduction"
             enabled: service.preset === "podcast"
             opacity: enabled ? 1 : 0.5
             quality: service.quality
@@ -1314,7 +1311,7 @@ Panel {
             opacity: enabled ? 1 : 0.5
 
             Text {
-              text: "Model"
+              text: "Noise model"
               color: root.foreground
               font.family: root.fontFamily
               font.pixelSize: Style.font.subtitle
