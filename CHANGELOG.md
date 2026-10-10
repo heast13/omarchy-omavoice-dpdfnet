@@ -8,6 +8,8 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-10-10
+
 ### Added
 
 - **De-esser** on the MODE settings: Off / Light / Medium / Strong, for Denoise
