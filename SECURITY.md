@@ -17,3 +17,7 @@ It:
 - Does not run as root. **Install rtkit** (`scripts/omavoice-rtkit`) opens a terminal where you run `sudo pacman -S rtkit` yourself, then restarts your user's `xdg-desktop-portal` service.
 
 Review `Service.qml` and `scripts/omavoice-run` before enabling it.
+
+## Reporting a problem
+
+Report anything that could let other programs or users abuse Omavoice privately, through GitHub's [security advisories](https://github.com/heast13/omarchy-omavoice-dpdfnet/security/advisories/new), not as a public issue. Problems with upstream Omavoice itself belong to [gigasolo/omavoice](https://github.com/gigasolo/omavoice).
